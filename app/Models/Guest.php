@@ -19,6 +19,7 @@ class Guest extends Model
         'status',
         'member_names',
         'note',
+        'public_token',
     ];
 
     protected $casts = [

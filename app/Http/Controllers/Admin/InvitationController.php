@@ -118,6 +118,7 @@ class InvitationController extends Controller
                 'seats_reserved' => $g->seats_reserved,
                 'seats_confirmed' => $g->seats_confirmed,
                 'status' => $g->status,
+                'public_token' => $g->public_token,
                 'rsvp_url' => URL::temporarySignedRoute(
                     'public.rsvp.show',
                     $invitation->rsvp_deadline_at ?? now()->addDays(30),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Invitation;
 use Inertia\Inertia;
+use App\Models\Guest;
 
 class PublicInvitationController extends Controller
 {
@@ -15,6 +16,28 @@ class PublicInvitationController extends Controller
 
         if ($invitation->status !== 'published' && !auth()->check()) {
             abort(404);
+        }
+
+        $guestId = request()->query('g');
+        $secret = request()->query('s');
+
+        $guest = null;
+        $rsvpUrl = null;
+
+        if( $guestId && $secret ) {
+            $guest = Guest::query()
+                ->where('id', $guestId)
+                ->where('invitation_id', $invitation->id)
+                ->where('public_token', $secret)
+                ->first();
+
+            if ($guest) {
+                $rsvpUrl = \URL::temporarySignedRoute(
+                    'public.rsvp.show',
+                    $invitation->rsvp_deadline_at ?? now()->addDays(30),
+                    ['guest' => $guest->id]
+                );
+            }
         }
 
         return Inertia::render('public/invitation/show', [
@@ -37,6 +60,15 @@ class PublicInvitationController extends Controller
                 'complementary_text_3' => $invitation->complementary_text_3,
                 'settings' => $invitation->settings ?? [],
             ],
+            'guest' => $guest ? [
+                'guest_id' => $guest->id,
+                'display_name' => $guest->display_name,
+                'type' => $guest->type,
+                'seats_reserved' => $guest->seats_reserved,
+                'status' => $guest->status,
+                'seats_confirmed' => $guest->seats_confirmed,
+            ] : null,
+            'rsvpUrl' => $rsvpUrl, // Null if no guest or invalid guest
         ]);
     }
 }

@@ -5,9 +5,18 @@ type Props = {
     template_key: string;
     [k: string]: any;
   };
+  guest: null | {
+    guest_id: number;
+    display_name: string;
+    type: "individual" | "group";
+    seats_reserved: number;
+    status: string;
+    seats_confirmed: number;
+  };
+  rsvpUrl: string | null;
 };
 
-export default function PublicInvitationShow({ invitation }: Props) {
+export default function PublicInvitationShow({ invitation, guest, rsvpUrl }: Props) {
   const Template = templateRegistry[invitation.template_key];
 
   if (!Template) {
@@ -21,5 +30,19 @@ export default function PublicInvitationShow({ invitation }: Props) {
     );
   }
 
-  return <Template invitation={invitation} />;
+  return (
+    <>
+      <Template invitation={invitation} />;
+      {rsvpUrl && (
+        <div className="fixed bottom-5 left-0 right-0 flex justify-center px-4">
+          <a
+            href={rsvpUrl}
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground shadow-lg"
+          >
+            Confirmar asistencia
+          </a>
+        </div>
+      )}
+    </>
+  )
 }

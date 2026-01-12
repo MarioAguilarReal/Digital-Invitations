@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Guest;
 use App\Models\Invitation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class GuestController extends Controller
 {
@@ -20,9 +21,10 @@ class GuestController extends Controller
             'member_names' => ['nullable', 'array'],
             'note' => ['nullable', 'string'],
         ]);
-
+        $data['public_token'] = Str::random(40);
         $data['seats_confirmed'] = 0;
         $data['status'] = 'pending';
+
 
         $invitation->guests()->create($data);
 

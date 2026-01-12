@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Head, router } from '@inertiajs/react';
+import { toWhatsAppUrl } from '@/lib/whatsapp';
 
 type Invitation = {
   id: number;
@@ -26,6 +27,7 @@ type Guest = {
   seats_confirmed: number;
   status: "pending" | "confirmed" | "declined";
   rsvp_url: string;
+  public_token: string;
 };
 
 type Props = {
@@ -52,7 +54,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
     seats_reserved: 1,
     note: "",
   });
-
+  console.log(guests)
   function submit(e: React.FormEvent) {
     e.preventDefault();
     router.post(`/admin/invitations/${invitation.id}/guests`, form);
@@ -63,6 +65,33 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
   async function copy(text: string) {
     await navigator.clipboard.writeText(text);
     alert('Copiado al portapapeles');
+  }
+
+  function buildWhatsAppMessage(guest: Guest) {
+    const date = invitation.event_date ?? '';
+    const time = invitation.event_time ? ` ${invitation.event_time}` : '';
+    const venue = invitation.venue_name ? ` en ${invitation.venue_name}` : '';
+
+    const invitationUrl = `${location.origin}/i/${invitation.slug}?g=${guest.id}&s=${guest.public_token}`;
+
+    if (guest.type == "group") {
+      return `Hola ${guest.display_name}, están invitad@s a *${invitation.event_name}* 🎉\n` +
+        `Tienen ${guest.seats_reserved} lugares reservados.\n` +
+        `📍 ${venue}\n` +
+        `🗓️ ${date} ⏰ ${time}\n\n` +
+        `Confirmen aquí: ${invitationUrl}`;
+    }
+
+    return `Hola ${guest.display_name}, estás invitad@ a *${invitation.event_name}* 🎉\n` +
+    `📍 ${venue}\n` +
+    `🗓️ ${date} ⏰ ${time}\n\n` +
+    `Confirma aquí: ${invitationUrl}`;
+  }
+
+  const sendMessage = (guest: Guest) => {
+    const message = buildWhatsAppMessage(guest);
+    const whatsURL = toWhatsAppUrl(message, guest.contact_phone);
+    window.open(whatsURL, '_blank');
   }
 
   return (
@@ -174,6 +203,13 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
                   <Button variant="outline" size="sm" onClick={() => copy(g.rsvp_url)}>
                     Copy RSVP (next step)
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => sendMessage(g)}>
+                    Send WhatsApp
+                  </Button>
+                  <Button variant="outline" onClick={() => copy(buildWhatsAppMessage(g))}>
+                    Copy Message
+                  </Button>
+
                 </div>
               ))}
             </div>
