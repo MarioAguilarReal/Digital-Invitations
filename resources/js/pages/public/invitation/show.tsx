@@ -33,16 +33,21 @@ export default function PublicInvitationShow({ invitation, guest, rsvpUrl }: Pro
   return (
     <>
       <Template invitation={invitation} />;
-      {rsvpUrl && (
-        <div className="fixed bottom-5 left-0 right-0 flex justify-center px-4">
+      {rsvpUrl ? (
+        <div className="fixed bottom-5 left-0 right-0 z-50 flex justify-center px-4 sm:bottom-6">
           <a
             href={rsvpUrl}
-            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground shadow-lg"
+            style={{
+              background: "var(--accent)",
+              borderRadius: "999px",
+              boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
+            }}
+            className="inline-flex w-full max-w-lg items-center justify-center px-6 py-4 text-sm font-semibold text-white transition hover:opacity-95"
           >
             Confirmar asistencia
           </a>
         </div>
-      )}
+      ) : null}
     </>
   )
 }

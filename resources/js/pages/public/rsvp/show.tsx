@@ -18,20 +18,38 @@ type Props = {
     seats_reserved: number;
     seats_confirmed: number;
     status: 'pending' | 'confirmed' | 'declined';
+    allow_plus_one?: boolean;
+    member_names?: string[] | null;
   };
   isClosed: boolean;
   storeUrl: string;
 };
 
 export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }: Props) {
+  const { errors } = usePage().props as { errors?: Record<string, string> };
   const [attending, setAttending] = useState<boolean>(guest.status === 'confirmed');
   const [seats, setSeats] = useState<number>(guest.seats_confirmed ?? 0);
+  const canPlusOne = !!guest.allow_plus_one;
+  const [plusOne, setPlusOne] = useState<boolean>(
+    canPlusOne && Array.isArray(guest.member_names) && guest.member_names.length > 0
+  );
+  const [plusOneName, setPlusOneName] = useState<string>(
+    canPlusOne && Array.isArray(guest.member_names) ? String(guest.member_names[0] ?? '') : ''
+  );
 
   const max = guest.seats_reserved;
 
-  function submitIndividual(val: boolean) {
-    setAttending(val);
-    router.post(storeUrl, { attending: val }, { preserveScroll: true });
+  function submitIndividual(e: React.FormEvent) {
+    e.preventDefault();
+    router.post(
+      storeUrl,
+      {
+        attending,
+        plus_one: canPlusOne ? plusOne : false,
+        plus_one_name: canPlusOne ? plusOneName : "",
+      },
+      { preserveScroll: true }
+    );
   }
 
   function submitGroup(e: React.FormEvent) {
@@ -78,31 +96,79 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
 
           <div className="mt-6 border-t pt-6">
             {guest.type === 'individual' ? (
-              <div className="grid gap-3">
+              <form onSubmit={submitIndividual} className="grid gap-3">
                 <div className="text-sm font-medium">¿Asistirás?</div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
+                    type="button"
                     disabled={isClosed}
-                    onClick={() => submitIndividual(true)}
-                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                    onClick={() => setAttending(true)}
+                    className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
+                      attending ? "bg-primary text-primary-foreground" : "border"
+                    }`}
                   >
                     Sí asistiré
                   </button>
 
                   <button
+                    type="button"
                     disabled={isClosed}
-                    onClick={() => submitIndividual(false)}
-                    className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
+                    onClick={() => {
+                      setAttending(false);
+                      setPlusOne(false);
+                      setPlusOneName('');
+                    }}
+                    className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
+                      !attending ? "bg-primary text-primary-foreground" : "border"
+                    }`}
                   >
                     No podré asistir
                   </button>
                 </div>
 
+                {attending && canPlusOne ? (
+                  <div className="grid gap-3 rounded-xl border bg-card p-4">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={plusOne}
+                        disabled={isClosed}
+                        onChange={(e) => setPlusOne(e.target.checked)}
+                      />
+                      Voy con acompañante (+1)
+                    </label>
+
+                    {plusOne ? (
+                      <div className="grid gap-1">
+                        <input
+                          type="text"
+                          placeholder="Nombre del acompañante"
+                          value={plusOneName}
+                          onChange={(e) => setPlusOneName(e.target.value)}
+                          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                          disabled={isClosed}
+                        />
+                        {errors?.plus_one_name ? (
+                          <div className="text-xs text-destructive">{errors.plus_one_name}</div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <button
+                  disabled={isClosed}
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                >
+                  Guardar confirmación
+                </button>
+
                 <div className="text-xs text-muted-foreground">
                   Estado actual: <span className="font-medium text-foreground">{guest.status}</span>
                 </div>
-              </div>
+              </form>
             ) : (
               <form onSubmit={submitGroup} className="grid gap-3">
                 <div className="text-sm font-medium">¿Cuántas personas asistirán?</div>

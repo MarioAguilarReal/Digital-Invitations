@@ -47,6 +47,7 @@ class PublicInvitationController extends Controller
                 'template_key' => $invitation->template->key,
                 'event_name' => $invitation->event_name,
                 'host_name' => $invitation->host_name,
+                'host_color' => $invitation->host_color,
                 'venue_name'=> $invitation->venue_name,
                 'venue_address' => $invitation->venue_address,
                 'event_date' => $invitation->event_date?->format('Y-m-d'),

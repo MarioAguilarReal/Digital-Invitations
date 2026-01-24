@@ -45,6 +45,8 @@ class PublicRsvpController extends Controller
                 'seats_reserved' => $guest -> seats_reserved,
                 'seats_confirmed' => $guest -> seats_confirmed,
                 'status' => $guest -> status,
+                'allow_plus_one' => $guest->allow_plus_one,
+                'member_names' => $guest->member_names,
             ],
             'isClosed' => $isClosed,
             'storeUrl' => $storeUrl,
@@ -67,14 +69,25 @@ class PublicRsvpController extends Controller
         if($guest->type === 'individual') {
             $data = $request->validate([
                 'attending' => ['required', 'boolean'],
+                'plus_one' => ['nullable', 'boolean'],
+                'plus_one_name' => ['nullable', 'string', 'max:255'],
             ]);
 
             if($data['attending']) {
+                $plusOne = $guest->allow_plus_one ? ($data['plus_one'] ?? false) : false;
+                if ($plusOne && empty($data['plus_one_name'])) {
+                    return back()->withErrors([
+                        'plus_one_name' => 'Ingresa el nombre del acompañante.',
+                    ]);
+                }
+
                 $guest->status = 'confirmed';
-                $guest->seats_confirmed = 1;
+                $guest->seats_confirmed = $plusOne ? 2 : 1;
+                $guest->member_names = $plusOne ? [$data['plus_one_name']] : null;
             } else {
                 $guest->status = 'declined';
                 $guest->seats_confirmed = 0;
+                $guest->member_names = null;
             }
         } else {
             $data = $request->validate([

@@ -20,7 +20,7 @@ class TemplateSeeder extends Seeder
             [
                 'name' => 'Graduacion - Modern Glass',
                 'description' => 'Glassmorphism + Layout Moderno',
-                'preview_image_url' => '/images/templates/gran_modern_01.png',
+                'preview_image_url' => '/images/templates/grad_modern_01.png',
                 'is_active' => true
             ]
         );

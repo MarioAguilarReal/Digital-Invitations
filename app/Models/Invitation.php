@@ -10,6 +10,7 @@ class Invitation extends Model
         'template_id',
         'event_name',
         'host_name',
+        'host_color',
         'venue_name',
         'venue_address',
         'event_date',

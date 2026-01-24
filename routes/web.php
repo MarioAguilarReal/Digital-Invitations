@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\GuestController;
+use App\Http\Controllers\Admin\UploadController;
 use App\Http\Controllers\PublicInvitationController;
 use App\Http\Controllers\PublicRsvpController;
 
@@ -41,6 +42,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::get('/invitations/{invitation}', [InvitationController::class, 'show'])->name('admin.invitations.show');
     Route::get('/invitations/{invitation}/edit', [InvitationController::class, 'edit'])->name('admin.invitations.edit');
     Route::put('/invitations/{invitation}', [InvitationController::class, 'update'])->name('admin.invitations.update');
+    Route::delete('/invitations/{invitation}', [InvitationController::class, 'destroy'])->name('admin.invitations.destroy');
     Route::post('/invitations/{invitation}/publish', [InvitationController::class, 'publish'])->name('admin.invitations.publish');
     Route::post('/invitations/{invitation}/unpublish', [InvitationController::class, 'unpublish'])->name('admin.invitations.unpublish');
 
@@ -48,6 +50,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     // Guests in the dashboard
     Route::post('/invitations/{invitation}/guests', [GuestController::class, 'store'])->name('admin.guests.store');
     Route::put('/guests/{guest}', [GuestController::class, 'update'])->name('admin.guests.update');
+    Route::delete('/guests/{guest}', [GuestController::class, 'destroy'])->name('admin.guests.destroy');
+
+    Route::post('/uploads', [UploadController::class, 'store'])->name('admin.uploads.store');
 });
 
 require __DIR__.'/settings.php';

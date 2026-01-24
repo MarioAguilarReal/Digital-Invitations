@@ -1,5 +1,15 @@
 import AppLayout from "@/layouts/app-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Head, Link, router } from "@inertiajs/react";
+import { useState } from "react";
 
 type InvitationRow = {
   id: number;
@@ -12,6 +22,7 @@ type InvitationRow = {
 };
 
 export default function InvitationsIndex({ invitations }: { invitations: InvitationRow[] }) {
+  const [deleteInvitation, setDeleteInvitation] = useState<InvitationRow | null>(null);
 
   const handleChangeStatus = (invitation: InvitationRow) => {
     if (invitation.status === 'published') {
@@ -48,7 +59,7 @@ export default function InvitationsIndex({ invitations }: { invitations: Invitat
                 <th className="px-4 py-3">Template</th>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -59,20 +70,28 @@ export default function InvitationsIndex({ invitations }: { invitations: Invitat
                   <td className="px-4 py-3">{inv.event_date ?? '—'}</td>
                   <td className="px-4 py-3">{inv.status}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link className="underline" href={`/admin/invitations/${inv.id}`}>
-                      Open
-                    </Link>
-                    <button
-                      onClick={() => handleChangeStatus(inv)}
-                      className={
-                        inv.status === 'published'
-                            ? "inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium"
-                            : "inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-                        }
-
-                    >
-                      {inv.status === 'published' ? 'Move to Drafts' : 'Publish Invitation'}
-                    </button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Link className="underline" href={`/admin/invitations/${inv.id}`}>
+                        Open
+                      </Link>
+                      <Link className="underline" href={`/admin/invitations/${inv.id}/edit`}>
+                        Edit
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleChangeStatus(inv)}
+                      >
+                        {inv.status === 'published' ? 'Move to Drafts' : 'Publish Invitation'}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteInvitation(inv)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -87,6 +106,32 @@ export default function InvitationsIndex({ invitations }: { invitations: Invitat
           </table>
         </div>
       </div>
+      <Dialog open={!!deleteInvitation} onOpenChange={(open) => !open && setDeleteInvitation(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar invitacion</DialogTitle>
+            <DialogDescription>
+              Esta accion eliminara la invitacion y todos los invitados asociados. No se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteInvitation(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!deleteInvitation) return;
+                router.delete(`/admin/invitations/${deleteInvitation.id}`, {
+                  onSuccess: () => setDeleteInvitation(null),
+                });
+              }}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

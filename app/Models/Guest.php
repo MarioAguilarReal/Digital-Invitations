@@ -10,6 +10,7 @@ class Guest extends Model
     protected $fillable = [
         'invitation_id',
         'type',
+        'allow_plus_one',
         'display_name',
         'contact_name',
         'contact_phone',
