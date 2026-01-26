@@ -9,6 +9,7 @@ use App\Models\Template;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Storage;
 
 class InvitationController extends Controller
 {
@@ -45,6 +46,7 @@ class InvitationController extends Controller
         return Inertia::render('admin/invitations/edit', [
             'invitation' => [
                 'id' => $invitation->id,
+                'slug' => $invitation->slug,
                 'template_id' => $invitation->template_id,
                 'event_name' => $invitation->event_name,
                 'host_name' => $invitation->host_name,
@@ -89,8 +91,18 @@ class InvitationController extends Controller
             'complementary_text_1' => ['nullable', 'string', 'max:255'],
             'complementary_text_2' => ['nullable', 'string', 'max:255'],
             'complementary_text_3' => ['nullable', 'string', 'max:255'],
-            'settings' => ['nullable', 'array'],
+            'settings' => ['nullable'],
+            'hero_image' => ['nullable', 'image', 'max:5120'],
+            'gallery_images' => ['nullable', 'array'],
+            'gallery_images.*' => ['image', 'max:5120'],
         ]);
+
+        $settings = $this->normalizeSettings($request->input('settings'));
+        if ($settings === null) {
+            return back()->withErrors([
+                'settings' => 'JSON inválido en settings.',
+            ]);
+        }
 
         // friendly slug
         $baseSlug = Str::slug($data['event_name'] . '-' . $data['host_name']);
@@ -104,8 +116,66 @@ class InvitationController extends Controller
             ...$data,
             'slug' => $slug,
             'status' => 'draft',
+            'settings' => $settings,
         ]);
+
+        $settingsChanged = false;
+        $heroFile = $request->file('hero_image');
+        if ($heroFile) {
+            $settings['hero_image'] = $this->storeInvitationImage($heroFile, $slug, 'hero');
+            $settingsChanged = true;
+        }
+
+        $galleryFiles = $request->file('gallery_images', []);
+        if (is_array($galleryFiles) && count($galleryFiles)) {
+            $galleryUrls = [];
+            foreach ($galleryFiles as $file) {
+                $galleryUrls[] = $this->storeInvitationImage($file, $slug, 'gallery');
+            }
+            $settings['gallery_images'] = array_merge($settings['gallery_images'] ?? [], $galleryUrls);
+            $settingsChanged = true;
+        }
+
+        if ($settingsChanged) {
+            $invitation->settings = $settings;
+            $invitation->save();
+        }
+
         return redirect()->route('admin.invitations.show', ['invitation' => $invitation->id]);
+    }
+
+    private function normalizeSettings($raw): ?array
+    {
+        if (is_array($raw)) {
+            return $raw;
+        }
+
+        if (is_string($raw) && strlen(trim($raw)) > 0) {
+            $decoded = json_decode($raw, true);
+            return is_array($decoded) ? $decoded : null;
+        }
+
+        return [];
+    }
+
+    private function storeInvitationImage($file, string $slug, string $category): string
+    {
+        $directory = "invitations/{$slug}/{$category}";
+        $original = $file->getClientOriginalName();
+        $ext = pathinfo($original, PATHINFO_EXTENSION);
+        $base = pathinfo($original, PATHINFO_FILENAME);
+        $safeBase = Str::slug($base);
+        $filename = $safeBase ? "{$safeBase}.{$ext}" : Str::random(12).".{$ext}";
+
+        $disk = Storage::disk('public');
+        $counter = 1;
+        while ($disk->exists("{$directory}/{$filename}")) {
+            $filename = ($safeBase ? "{$safeBase}-{$counter}" : Str::random(12)).".{$ext}";
+            $counter++;
+        }
+
+        $path = $file->storePubliclyAs($directory, $filename, 'public');
+        return asset('storage/'.$path);
     }
 
     public function update(Request $request, Invitation $invitation) {

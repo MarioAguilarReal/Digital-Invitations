@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
-import { router } from "@inertiajs/react";
+import React, { useEffect, useMemo, useState } from "react";
+import { router, usePage } from "@inertiajs/react";
+import { useForm } from "react-hook-form";
 
 type Template = {
   id: number;
@@ -11,6 +12,7 @@ type Template = {
 
 type Invitation = {
   id: number;
+  slug: string;
   template_id: number | string;
   event_name: string;
   host_name: string;
@@ -34,35 +36,72 @@ type Props = {
   invitation: Invitation;
 };
 
+type InvitationFormValues = {
+  template_id: number;
+  event_name: string;
+  host_name: string;
+  host_color?: string;
+  venue_name: string;
+  venue_address?: string | null;
+  event_date: string;
+  event_time: string;
+  capacity: number;
+  rsvp_deadline_at?: string | null;
+  gift_type?: string | null;
+  dress_code?: string | null;
+  complementary_text_1?: string | null;
+  complementary_text_2?: string | null;
+  complementary_text_3?: string | null;
+  settingsText?: string;
+};
+
 export default function EditInvitation({ templates, invitation }: Props) {
-  const [form, setForm] = useState({
-    template_id: invitation.template_id ?? templates[0]?.id ?? "",
-    event_name: invitation.event_name ?? "",
-    host_name: invitation.host_name ?? "",
-    host_color: invitation.host_color ?? "#6D28D9",
-    venue_name: invitation.venue_name ?? "",
-    venue_address: invitation.venue_address ?? "",
-    event_date: invitation.event_date ?? "",
-    event_time: invitation.event_time ?? "",
-    capacity: invitation.capacity ?? 0,
-    rsvp_deadline_at: invitation.rsvp_deadline_at ?? "",
-    gift_type: invitation.gift_type ?? "",
-    dress_code: invitation.dress_code ?? "",
-    complementary_text_1: invitation.complementary_text_1 ?? "",
-    complementary_text_2: invitation.complementary_text_2 ?? "",
-    complementary_text_3: invitation.complementary_text_3 ?? "",
-    settings: invitation.settings ?? {},
+  const { flash } = usePage().props as { flash?: { upload?: { url?: string } } };
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+  } = useForm<InvitationFormValues>({
+    defaultValues: {
+      template_id: Number(invitation.template_id ?? templates[0]?.id ?? 0),
+      event_name: invitation.event_name ?? "",
+      host_name: invitation.host_name ?? "",
+      host_color: invitation.host_color ?? "#6D28D9",
+      venue_name: invitation.venue_name ?? "",
+      venue_address: invitation.venue_address ?? "",
+      event_date: invitation.event_date ?? "",
+      event_time: invitation.event_time ?? "",
+      capacity: invitation.capacity ?? 0,
+      rsvp_deadline_at: invitation.rsvp_deadline_at ?? "",
+      gift_type: invitation.gift_type ?? "",
+      dress_code: invitation.dress_code ?? "",
+      complementary_text_1: invitation.complementary_text_1 ?? "",
+      complementary_text_2: invitation.complementary_text_2 ?? "",
+      complementary_text_3: invitation.complementary_text_3 ?? "",
+      settingsText: JSON.stringify(invitation.settings ?? {}, null, 2),
+    },
   });
-  const [settingsText, setSettingsText] = useState(() =>
-    JSON.stringify(form.settings, null, 2)
-  );
-  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Record<string, any>>(invitation.settings ?? {});
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  function slugify(value: string) {
+    return value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+  }
 
   function syncSettings(nextSettings: Record<string, any>) {
-    setForm(f => ({ ...f, settings: nextSettings }));
-    setSettingsText(JSON.stringify(nextSettings, null, 2));
+    setSettings(nextSettings);
+    setValue("settingsText", JSON.stringify(nextSettings, null, 2), {
+      shouldValidate: true,
+    });
   }
 
   function setByPath(obj: any, path: string, value: any) {
@@ -79,14 +118,13 @@ export default function EditInvitation({ templates, invitation }: Props) {
   }
 
   function updateSetting(path: string, value: any) {
-    const next = setByPath(form.settings ?? {}, path, value);
+    const next = setByPath(settings ?? {}, path, value);
     syncSettings(next);
-    setSettingsError(null);
   }
 
   function getSetting(path: string, fallback: any = '') {
     const parts = path.split('.');
-    let cur: any = form.settings ?? {};
+    let cur: any = settings ?? {};
     for (const p of parts) {
       if (cur == null) return fallback;
       cur = cur[p];
@@ -103,16 +141,31 @@ export default function EditInvitation({ templates, invitation }: Props) {
     updateSetting(path, arr.filter(Boolean));
   }
 
-  const selected = useMemo(
-    () => templates.find(t => t.id === Number(form.template_id)),
-    [templates, form.template_id]
-  );
+  const eventName = watch("event_name");
+  const hostName = watch("host_name");
+  const slugHint = useMemo(() => {
+    if (invitation.slug) return invitation.slug;
+    const base = `${eventName}-${hostName}`.trim();
+    return slugify(base) || "draft";
+  }, [invitation.slug, eventName, hostName]);
 
-  function getCsrfToken() {
-    return document
-      .querySelector('meta[name="csrf-token"]')
-      ?.getAttribute('content');
-  }
+  const galleryImages = getStringArray('gallery_images');
+  useEffect(() => {
+    if (!galleryImages.length) {
+      setGalleryIndex(0);
+      return;
+    }
+    if (galleryIndex >= galleryImages.length) {
+      setGalleryIndex(galleryImages.length - 1);
+    }
+  }, [galleryImages.length, galleryIndex]);
+
+  const templateId = watch("template_id");
+  const settingsText = watch("settingsText") ?? "";
+  const selected = useMemo(
+    () => templates.find(t => t.id === Number(templateId)),
+    [templates, templateId]
+  );
 
   async function uploadImages(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -121,25 +174,14 @@ export default function EditInvitation({ templates, invitation }: Props) {
 
     try {
       const urls: string[] = [];
-      const token = getCsrfToken() ?? '';
 
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append('image', file);
-
-        const res = await fetch('/admin/uploads', {
-          method: 'POST',
-          body: formData,
-          headers: token ? { 'X-CSRF-TOKEN': token } : undefined,
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || 'Upload failed');
-        }
-
-        const data = await res.json();
-        if (data?.url) urls.push(String(data.url));
+        formData.append('slug', slugHint);
+        formData.append('category', 'gallery');
+        const uploaded = await postUpload(formData);
+        if (uploaded?.url) urls.push(String(uploaded.url));
       }
 
       if (urls.length) {
@@ -158,23 +200,12 @@ export default function EditInvitation({ templates, invitation }: Props) {
     setUploadError(null);
 
     try {
-      const token = getCsrfToken() ?? '';
       const formData = new FormData();
       formData.append('image', file);
-
-      const res = await fetch('/admin/uploads', {
-        method: 'POST',
-        body: formData,
-        headers: token ? { 'X-CSRF-TOKEN': token } : undefined,
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || 'Upload failed');
-      }
-
-      const data = await res.json();
-      if (data?.url) updateSetting('hero_image', String(data.url));
+      formData.append('slug', slugHint);
+      formData.append('category', 'hero');
+      const uploaded = await postUpload(formData);
+      if (uploaded?.url) updateSetting('hero_image', String(uploaded.url));
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'No se pudo subir la imagen.');
     } finally {
@@ -182,42 +213,48 @@ export default function EditInvitation({ templates, invitation }: Props) {
     }
   }
 
-  function handleSubmit(e: any) {
-    e.preventDefault();
-    const trimmed = settingsText.trim();
-    if (trimmed) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        setSettingsError(null);
-        router.put(`/admin/invitations/${invitation.id}`, { ...form, settings: parsed });
-      } catch {
-        setSettingsError("JSON inválido. Usa comillas dobles y sin comas finales.");
-      }
-      return;
-    }
-
-    router.put(`/admin/invitations/${invitation.id}`, { ...form, settings: null });
-  }
-
-  function saveAndReturn() {
-    const trimmed = settingsText.trim();
-    if (trimmed) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        setSettingsError(null);
-        router.put(`/admin/invitations/${invitation.id}`, { ...form, settings: parsed }, {
-          onSuccess: () => router.visit('/admin/invitations'),
-        });
-      } catch {
-        setSettingsError("JSON inválido. Usa comillas dobles y sin comas finales.");
-      }
-      return;
-    }
-
-    router.put(`/admin/invitations/${invitation.id}`, { ...form, settings: null }, {
-      onSuccess: () => router.visit('/admin/invitations'),
+  function postUpload(formData: FormData): Promise<{ url?: string } | undefined> {
+    return new Promise((resolve, reject) => {
+      router.post('/admin/uploads', formData, {
+        forceFormData: true,
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+          const upload = (page?.props as any)?.flash?.upload ?? flash?.upload;
+          resolve(upload);
+        },
+        onError: (errors) => {
+          reject(new Error(Object.values(errors).join(', ') || 'Upload failed'));
+        },
+      });
     });
   }
+
+  function submitUpdate(values: InvitationFormValues, onSuccess?: () => void) {
+    const trimmed = settingsText.trim();
+    let parsedSettings: Record<string, any> = settings ?? {};
+    if (trimmed) {
+      try {
+        parsedSettings = JSON.parse(trimmed);
+      } catch {
+        setSettingsError("JSON inválido en settings.");
+        return;
+      }
+    }
+    setSettingsError(null);
+
+    router.put(
+      `/admin/invitations/${invitation.id}`,
+      { ...values, settings: parsedSettings },
+      { onSuccess },
+    );
+  }
+
+  const onSubmit = handleSubmit((values) => submitUpdate(values));
+
+  const saveAndReturn = handleSubmit((values) =>
+    submitUpdate(values, () => router.visit("/admin/invitations")),
+  );
 
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
@@ -238,12 +275,12 @@ export default function EditInvitation({ templates, invitation }: Props) {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setForm(f => ({ ...f, template_id: t.id }))}
+                onClick={() => setValue("template_id", t.id, { shouldValidate: true })}
                 style={{
                   textAlign: "left",
                   padding: 12,
                   borderRadius: 12,
-                  border: t.id === Number(form.template_id) ? "2px solid black" : "1px solid #ddd",
+                  border: t.id === Number(templateId) ? "2px solid black" : "1px solid #ddd",
                   background: "white",
                   cursor: "pointer",
                 }}
@@ -266,82 +303,61 @@ export default function EditInvitation({ templates, invitation }: Props) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+        <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600 }}>Detalles del Evento</h2>
+          <input type="hidden" {...register("template_id")} />
 
           <label htmlFor="event_name" style={{ fontSize: 12, fontWeight: 600 }}>Nombre del evento</label>
-          <input id="event_name" placeholder="Nombre del evento" value={form.event_name}
-            onChange={e => setForm(f => ({ ...f, event_name: e.target.value }))} required />
+          <input id="event_name" placeholder="Nombre del evento" {...register("event_name")} required />
 
           <label htmlFor="host_name" style={{ fontSize: 12, fontWeight: 600 }}>Nombre del anfitrión</label>
-          <input id="host_name" placeholder="Nombre del anfitrión" value={form.host_name}
-            onChange={e => setForm(f => ({ ...f, host_name: e.target.value }))} required />
+          <input id="host_name" placeholder="Nombre del anfitrión" {...register("host_name")} required />
 
           <label htmlFor="host_color" style={{ fontSize: 12, fontWeight: 600 }}>Color del anfitrión</label>
           <input
             id="host_color"
             type="color"
-            value={form.host_color}
-            onChange={e => setForm(f => ({ ...f, host_color: e.target.value }))}
+            {...register("host_color")}
             style={{ height: 42, padding: 0 }}
           />
 
           <label htmlFor="venue_name" style={{ fontSize: 12, fontWeight: 600 }}>Nombre del lugar</label>
-          <input id="venue_name" placeholder="Nombre del lugar" value={form.venue_name}
-            onChange={e => setForm(f => ({ ...f, venue_name: e.target.value }))} required />
+          <input id="venue_name" placeholder="Nombre del lugar" {...register("venue_name")} required />
 
           <label htmlFor="venue_address" style={{ fontSize: 12, fontWeight: 600 }}>Dirección del lugar</label>
-          <input id="venue_address" placeholder="Dirección del lugar" value={form.venue_address}
-            onChange={e => setForm(f => ({ ...f, venue_address: e.target.value }))} required />
+          <input id="venue_address" placeholder="Dirección del lugar" {...register("venue_address")} required />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div style={{ display: "grid", gap: 6 }}>
               <label htmlFor="event_date" style={{ fontSize: 12, fontWeight: 600 }}>Fecha del evento</label>
-              <input
-                id="event_date"
-                type="date"
-                value={form.event_date}
-                onChange={(e) => setForm(f => ({ ...f, event_date: e.target.value }))}
-              />
+              <input id="event_date" type="date" {...register("event_date")} />
             </div>
             <div style={{ display: "grid", gap: 6 }}>
               <label htmlFor="event_time" style={{ fontSize: 12, fontWeight: 600 }}>Hora del evento</label>
-              <input
-                id="event_time"
-                type="time"
-                value={form.event_time}
-                onChange={(e) => setForm(f => ({ ...f, event_time: e.target.value }))}
-              />
+              <input id="event_time" type="time" {...register("event_time")} />
             </div>
           </div>
 
           <label htmlFor="capacity" style={{ fontSize: 12, fontWeight: 600 }}>Capacidad</label>
-          <input id="capacity" type="number" placeholder="Capacidad" value={form.capacity}
-            onChange={e => setForm(f => ({ ...f, capacity: Number(e.target.value) }))} required />
+          <input id="capacity" type="number" placeholder="Capacidad" {...register("capacity", { valueAsNumber: true })} required />
 
           <label htmlFor="rsvp_deadline_at" style={{ fontSize: 12, fontWeight: 600 }}>Fecha límite para RSVP</label>
-          <input id="rsvp_deadline_at" type="date" placeholder="Fecha límite para RSVP" value={form.rsvp_deadline_at}
-            onChange={e => setForm(f => ({ ...f, rsvp_deadline_at: e.target.value }))} />
+          <input id="rsvp_deadline_at" type="date" placeholder="Fecha límite para RSVP" {...register("rsvp_deadline_at")} />
 
           <label htmlFor="gift_type" style={{ fontSize: 12, fontWeight: 600 }}>Tipo de regalo</label>
-          <input id="gift_type" placeholder="Tipo de regalo" value={form.gift_type}
-            onChange={e => setForm(f => ({ ...f, gift_type: e.target.value }))} />
+          <input id="gift_type" placeholder="Tipo de regalo" {...register("gift_type")} />
 
           <label htmlFor="dress_code" style={{ fontSize: 12, fontWeight: 600 }}>Código de vestimenta</label>
-          <input id="dress_code" placeholder="Código de vestimenta" value={form.dress_code}
-            onChange={e => setForm(f => ({ ...f, dress_code: e.target.value }))} />
+          <input id="dress_code" placeholder="Código de vestimenta" {...register("dress_code")} />
 
           <label htmlFor="complementary_text_1" style={{ fontSize: 12, fontWeight: 600 }}>Texto complementario 1</label>
-          <textarea id="complementary_text_1" placeholder="Texto complementario 1" value={form.complementary_text_1}
-            onChange={e => setForm(f => ({ ...f, complementary_text_1: e.target.value }))} />
+          <textarea id="complementary_text_1" placeholder="Texto complementario 1" {...register("complementary_text_1")} />
 
           <label htmlFor="complementary_text_2" style={{ fontSize: 12, fontWeight: 600 }}>Texto complementario 2</label>
-          <textarea id="complementary_text_2" placeholder="Texto complementario 2" value={form.complementary_text_2}
-            onChange={e => setForm(f => ({ ...f, complementary_text_2: e.target.value }))} />
+          <textarea id="complementary_text_2" placeholder="Texto complementario 2" {...register("complementary_text_2")} />
 
           <label htmlFor="complementary_text_3" style={{ fontSize: 12, fontWeight: 600 }}>Texto complementario 3</label>
-          <textarea id="complementary_text_3" placeholder="Texto complementario 3" value={form.complementary_text_3}
-            onChange={e => setForm(f => ({ ...f, complementary_text_3: e.target.value }))} />
+          <textarea id="complementary_text_3" placeholder="Texto complementario 3" {...register("complementary_text_3")} />
 
           <details style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 12, background: '#fff' }}>
             <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Campos avanzados (visual)</summary>
@@ -351,16 +367,6 @@ export default function EditInvitation({ templates, invitation }: Props) {
               <div style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 8 }}>Hero</div>
                 <div style={{ display: 'grid', gap: 10 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>
-                    Subir imagen hero
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={uploading}
-                      onChange={(e) => uploadHeroImage(e.target.files?.[0] ?? null)}
-                      style={{ display: 'block', marginTop: 6 }}
-                    />
-                  </label>
                   {String(getSetting('hero_image', '') || '').trim() ? (
                     <img
                       src={String(getSetting('hero_image', ''))}
@@ -368,7 +374,36 @@ export default function EditInvitation({ templates, invitation }: Props) {
                       style={{ width: '100%', borderRadius: 12, border: '1px solid #eee' }}
                       loading="lazy"
                     />
-                  ) : null}
+                  ) : (
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>
+                      Sube una imagen para mostrar el hero.
+                    </div>
+                  )}
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: 12,
+                      padding: 12,
+                      display: 'grid',
+                      gap: 6,
+                      background: '#f8fafc',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Subir imagen hero
+                    <span style={{ fontSize: 12, opacity: 0.7 }}>
+                      Selecciona una imagen desde tu computadora
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploading}
+                      onChange={(e) => uploadHeroImage(e.target.files?.[0] ?? null)}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
                   <input
                     placeholder="Hero title"
                     value={String(getSetting('hero_title', ''))}
@@ -378,11 +413,6 @@ export default function EditInvitation({ templates, invitation }: Props) {
                     placeholder="Hero subtitle"
                     value={String(getSetting('hero_subtitle', ''))}
                     onChange={e => updateSetting('hero_subtitle', e.target.value)}
-                  />
-                  <input
-                    placeholder="Hero image URL (https://...)"
-                    value={String(getSetting('hero_image', ''))}
-                    onChange={e => updateSetting('hero_image', e.target.value)}
                   />
                 </div>
               </div>
@@ -401,15 +431,30 @@ export default function EditInvitation({ templates, invitation }: Props) {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>
-                    Subir imágenes
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: 12,
+                      padding: 12,
+                      display: 'grid',
+                      gap: 6,
+                      background: '#f8fafc',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Subir imágenes a la galería
+                    <span style={{ fontSize: 12, opacity: 0.7 }}>
+                      Selecciona varias imágenes para el carrusel
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
                       multiple
                       disabled={uploading}
                       onChange={(e) => uploadImages(e.target.files)}
-                      style={{ display: 'block', marginTop: 6 }}
+                      style={{ display: 'none' }}
                     />
                   </label>
                   {uploading && (
@@ -417,6 +462,43 @@ export default function EditInvitation({ templates, invitation }: Props) {
                   )}
                   {uploadError && (
                     <div style={{ fontSize: 12, color: '#b91c1c' }}>{uploadError}</div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  {galleryImages.length ? (
+                    <div style={{ border: '1px solid #eee', borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
+                      <div style={{ aspectRatio: '16/9', background: '#f3f4f6' }}>
+                        <img
+                          src={galleryImages[galleryIndex]}
+                          alt={`Preview ${galleryIndex + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          loading="lazy"
+                        />
+                      </div>
+                      {galleryImages.length > 1 ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setGalleryIndex((galleryIndex - 1 + galleryImages.length) % galleryImages.length)}
+                            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', borderRadius: 999, border: '1px solid #ddd', background: '#fff', padding: '6px 10px', cursor: 'pointer' }}
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setGalleryIndex((galleryIndex + 1) % galleryImages.length)}
+                            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', borderRadius: 999, border: '1px solid #ddd', background: '#fff', padding: '6px 10px', cursor: 'pointer' }}
+                          >
+                            ›
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>
+                      Sube imágenes para ver el carrusel de vista previa.
+                    </div>
                   )}
                 </div>
 
@@ -664,15 +746,14 @@ export default function EditInvitation({ templates, invitation }: Props) {
                   id="settings"
                   placeholder="Configuraciones (JSON)"
                   value={settingsText}
-                  onChange={e => {
+                  onChange={(e) => {
                     const next = e.target.value;
-                    setSettingsText(next);
+                    setValue("settingsText", next, { shouldValidate: true });
                     try {
                       const parsed = JSON.parse(next);
-                      setSettingsError(null);
-                      setForm(f => ({ ...f, settings: parsed }));
+                      setSettings(parsed);
                     } catch {
-                      setSettingsError("JSON inválido. Usa comillas dobles y sin comas finales.");
+                      // Keep last valid settings in state.
                     }
                   }}
                   style={{ fontFamily: "monospace", minHeight: 100 }}
@@ -695,7 +776,7 @@ export default function EditInvitation({ templates, invitation }: Props) {
                   type="button"
                   onClick={() => {
                     syncSettings({
-                      hero_title: form.event_name || 'Graduación',
+                      hero_title: watch("event_name") || 'Graduación',
                       hero_subtitle: 'Acompáñanos a celebrar este logro. Tu presencia hace la diferencia.',
                       countdown_title: 'Cuenta regresiva para el gran día',
                       gallery_images: getStringArray('gallery_images'),

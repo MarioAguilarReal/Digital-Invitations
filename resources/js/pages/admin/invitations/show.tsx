@@ -13,6 +13,7 @@ import {
 import { Head, router, usePage } from '@inertiajs/react';
 import { toWhatsAppUrl } from '@/lib/whatsapp';
 import { InputMask as MaskedInput } from '@react-input/mask';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 
 type Invitation = {
   id: number;
@@ -55,60 +56,85 @@ type Props = {
   };
 };
 
+type GuestCreateValues = {
+  type: "individual" | "group";
+  display_name: string;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  seats_reserved?: number;
+  allow_plus_one?: boolean;
+  member_names: { name: string }[];
+  note?: string | null;
+};
+
+type GuestEditValues = {
+  display_name: string;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  seats_reserved?: number;
+  allow_plus_one?: boolean;
+  member_names: { name: string }[];
+};
+
+
 export default function AdminInvitationShow({ invitation, guests, stats }: Props) {
   const { errors } = usePage().props as { errors?: Record<string, string> };
-  const [form, setForm] = useState({
-    type: "individual" as "individual" | "group",
-    display_name: "",
-    contact_name: "",
-    contact_phone: "",
-    contact_email: "",
-    seats_reserved: 2,
-    allow_plus_one: false,
-    member_names: [] as string[],
-    note: "",
-  });
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
-  const [editForm, setEditForm] = useState({
-    display_name: "",
-    contact_phone: "",
-    contact_email: "",
-    seats_reserved: 1,
-    allow_plus_one: false,
-    member_names: [] as string[],
-  });
   const [deleteGuest, setDeleteGuest] = useState<Guest | null>(null);
   const [deleteInvitation, setDeleteInvitation] = useState(false);
 
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+  } = useForm<GuestCreateValues>({
+    defaultValues: {
+      type: "individual",
+      display_name: "",
+      contact_phone: "",
+      contact_email: "",
+      seats_reserved: 1,
+      allow_plus_one: false,
+      member_names: [],
+      note: "",
+    },
+  });
+
+  const {
+    control: editControl,
+    register: editRegister,
+    handleSubmit: handleEditSubmit,
+    reset: resetEdit,
+  } = useForm<GuestEditValues>({
+    defaultValues: {
+      display_name: "",
+      contact_phone: "",
+      contact_email: "",
+      seats_reserved: 1,
+      allow_plus_one: false,
+      member_names: [],
+    },
+  });
+
+  const createFields = useFieldArray({ control, name: "member_names" });
+  const editFields = useFieldArray({ control: editControl, name: "member_names" });
+
   useEffect(() => {
     if (!editingGuest) return;
-    setEditForm({
+    resetEdit({
       display_name: editingGuest.display_name ?? "",
       contact_phone: editingGuest.contact_phone ?? "",
       contact_email: editingGuest.contact_email ?? "",
       seats_reserved: editingGuest.seats_reserved ?? 1,
       allow_plus_one: !!editingGuest.allow_plus_one,
-      member_names: Array.isArray(editingGuest.member_names) ? editingGuest.member_names : [],
+      member_names: Array.isArray(editingGuest.member_names)
+        ? editingGuest.member_names.map((name) => ({ name }))
+        : [],
     });
-  }, [editingGuest]);
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    router.post(`/admin/invitations/${invitation.id}/guests`, form, {
-          onSuccess: () => {
-            setForm({
-              type: "individual",
-              display_name: "",
-              contact_name: "",
-              contact_phone: "",
-              contact_email: "",
-              seats_reserved: 1,
-              allow_plus_one: false,
-              member_names: [],
-              note: "",
-            });
-          },
-        });
-  }
+  }, [editingGuest, resetEdit]);
 
   const publicUrl = useMemo(() => `/i/${invitation.slug}`, [invitation.slug]);
 
@@ -144,10 +170,59 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
     window.open(whatsURL, '_blank');
   }
 
+  const type = watch("type");
+  const allowPlusOne = watch("allow_plus_one");
+  const seatsReserved = watch("seats_reserved");
+  const typeField = register("type");
+
+  const { replace: replaceCreateMembers } = createFields;
+
+  useEffect(() => {
+    if (type !== "group") {
+      replaceCreateMembers([]);
+    }
+  }, [type, replaceCreateMembers]);
+
+
+  const onCreateGuest = handleSubmit((values) => {
+    const payload: Record<string, any> = {
+      type: values.type,
+      display_name: values.display_name,
+      contact_phone: values.contact_phone,
+      contact_email: values.contact_email,
+      note: values.note,
+    };
+
+    if (values.type === "group") {
+      payload.seats_reserved = values.seats_reserved ?? 1;
+      payload.member_names = (values.member_names ?? [])
+        .map((entry) => entry.name)
+        .filter(Boolean);
+    } else {
+      payload.allow_plus_one = !!values.allow_plus_one;
+    }
+
+    router.post(`/admin/invitations/${invitation.id}/guests`, payload, {
+      onSuccess: () => {
+        reset({
+          type: "individual",
+          display_name: "",
+          contact_phone: "",
+          contact_email: "",
+          seats_reserved: 1,
+          allow_plus_one: false,
+          member_names: [],
+          note: "",
+        });
+        createFields.replace([]);
+      },
+    });
+  });
+
   const remainingSeats = stats.remainingSeats ?? 0;
-  const requestedSeats = form.type === 'group'
-    ? Math.max(1, form.seats_reserved)
-    : (form.allow_plus_one ? 2 : 1);
+  const requestedSeats = type === 'group'
+    ? Math.max(1, Number(seatsReserved) || 1)
+    : (allowPlusOne ? 2 : 1);
   const canCreateGuest = remainingSeats >= requestedSeats;
 
   const inputBaseClass =
@@ -196,21 +271,23 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-          <form onSubmit={submit} className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+          <form onSubmit={onCreateGuest} className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
             <h2 className="text-sm font-semibold">Add guest</h2>
 
             <div className="mt-3 grid gap-3">
               <select
-                value={form.type}
+                {...typeField}
+                value={type}
                 onChange={(e) => {
+                  typeField.onChange(e);
                   const nextType = e.target.value as "individual" | "group";
-                  setForm(f => ({
-                    ...f,
-                    type: nextType,
-                    seats_reserved: nextType === 'group' ? Math.max(1, f.seats_reserved || 1) : 1,
-                    allow_plus_one: nextType === 'group' ? false : f.allow_plus_one,
-                    member_names: nextType === 'group' ? f.member_names : [],
-                  }));
+                  setValue("type", nextType, { shouldValidate: true });
+                  if (nextType === "group") {
+                    setValue("seats_reserved", Math.max(1, Number(seatsReserved) || 1));
+                    setValue("allow_plus_one", false);
+                  } else {
+                    setValue("seats_reserved", 1);
+                  }
                 }}
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
               >
@@ -219,75 +296,69 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
               </select>
 
               <Input
-                placeholder={form.type === "group" ? "Family name (e.g., Familia Perez Juarez)" : "Guest name"}
-                value={form.display_name}
-                onChange={(e) => setForm(f => ({ ...f, display_name: e.target.value }))}
+                placeholder={type === "group" ? "Family name (e.g., Familia Perez Juarez)" : "Guest name"}
+                {...register("display_name")}
               />
 
-              <MaskedInput
-                mask="(___) ___-____"
-                replacement={{ _: /\d/ }}
-                value={form.contact_phone ?? ''}
-                onChange={(e:any ) => setForm(f => ({ ...f, contact_phone: e.target.value }))}
-                className={inputBaseClass}
-                placeholder="Contact phone (optional)"
+              <Controller
+                control={control}
+                name="contact_phone"
+                render={({ field }) => (
+                  <MaskedInput
+                    mask="(___) ___-____"
+                    replacement={{ _: /\d/ }}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    className={inputBaseClass}
+                    placeholder="Contact phone (optional)"
+                  />
+                )}
               />
 
               <Input
                 placeholder="Contact email (optional)"
                 type="email"
-                value={form.contact_email}
-                onChange={(e) => setForm(f => ({ ...f, contact_email: e.target.value }))}
+                {...register("contact_email")}
               />
 
-              {form.type === 'group' ? (
+              {type === 'group' ? (
                 <Input
                   type="number"
                   min={1}
                   placeholder="Seats reserved"
-                  value={form.seats_reserved}
-                  onChange={(e) => setForm(f => ({ ...f, seats_reserved: Number(e.target.value) }))}
+                  {...register("seats_reserved", { valueAsNumber: true })}
                 />
               ) : (
                 <div className="grid gap-2">
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
                     <input
                       type="checkbox"
-                      checked={form.allow_plus_one}
-                      onChange={(e) => setForm(f => ({ ...f, allow_plus_one: e.target.checked }))}
+                      checked={!!allowPlusOne}
+                      onChange={(e) => setValue("allow_plus_one", e.target.checked)}
                     />
                     Permitir acompañante (+1)
                   </label>
                   <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-                    Reservados: {form.allow_plus_one ? 2 : 1} lugares.
+                    Reservados: {allowPlusOne ? 2 : 1} lugares.
                   </div>
                 </div>
               )}
 
-              {form.type === 'group' ? (
+              {type === 'group' ? (
                 <div className="grid gap-2">
                   <div className="text-xs font-medium text-muted-foreground">Nombres de asistentes (opcional)</div>
                   <div className="grid gap-2">
-                    {(form.member_names ?? []).map((name, idx) => (
-                      <div key={idx} className="grid grid-cols-[1fr_36px] gap-2">
+                    {createFields.fields.map((field, idx) => (
+                      <div key={field.id} className="grid grid-cols-[1fr_36px] gap-2">
                         <Input
                           placeholder={`Nombre #${idx + 1}`}
-                          value={name}
-                          onChange={(e) => {
-                            const next = [...form.member_names];
-                            next[idx] = e.target.value;
-                            setForm(f => ({ ...f, member_names: next }));
-                          }}
+                          {...register(`member_names.${idx}.name` as const)}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => {
-                            const next = [...form.member_names];
-                            next.splice(idx, 1);
-                            setForm(f => ({ ...f, member_names: next }));
-                          }}
+                          onClick={() => createFields.remove(idx)}
                         >
                           ×
                         </Button>
@@ -297,7 +368,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setForm(f => ({ ...f, member_names: [...(f.member_names ?? []), ''] }))}
+                      onClick={() => createFields.append({ name: "" })}
                     >
                       + Agregar nombre
                     </Button>
@@ -309,8 +380,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
                 placeholder="Note (optional)"
                 rows={3}
                 className="min-h-[90px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={form.note}
-                onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
+                {...register("note")}
               />
 
               {errors?.seats_reserved && (
@@ -337,7 +407,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
               {guests.length === 0 ? (
                 <div className="text-sm text-muted-foreground">No guests yet.</div>
               ) : guests.map(g => (
-                <div key={g.id} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 text-card-foreground sm:flex-row sm:items-center">
+                <div key={g.id} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 text-card-foreground sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
                     <div className="font-semibold">
                       {g.display_name}{' '}
@@ -357,21 +427,23 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
                       </div>
                     ) : null}
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => copy(g.rsvp_url)}>
-                    Copy RSVP (next step)
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => sendMessage(g)}>
-                    Send WhatsApp
-                  </Button>
-                  <Button variant="outline" onClick={() => copy(buildWhatsAppMessage(g))}>
-                    Copy Message
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setEditingGuest(g)}>
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setDeleteGuest(g)}>
-                    Delete
-                  </Button>
+                  <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+                    <Button variant="outline" size="sm" onClick={() => copy(g.rsvp_url)} className="w-full sm:w-auto">
+                      Copy RSVP (next step)
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => sendMessage(g)} className="w-full sm:w-auto">
+                      Send WhatsApp
+                    </Button>
+                    <Button variant="outline" onClick={() => copy(buildWhatsAppMessage(g))} className="w-full sm:w-auto">
+                      Copy Message
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setEditingGuest(g)} className="w-full sm:w-auto">
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setDeleteGuest(g)} className="w-full sm:w-auto">
+                      Delete
+                    </Button>
+                  </div>
 
                 </div>
               ))}
@@ -390,46 +462,49 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
           {editingGuest ? (
             <form
               className="grid gap-3"
-              onSubmit={(e) => {
-                e.preventDefault();
+              onSubmit={handleEditSubmit((values) => {
+                if (!editingGuest) return;
                 const payload: Record<string, any> = {
-                  display_name: editForm.display_name,
-                  contact_phone: editForm.contact_phone,
-                  contact_email: editForm.contact_email,
+                  display_name: values.display_name,
+                  contact_phone: values.contact_phone,
+                  contact_email: values.contact_email,
                 };
 
                 if (editingGuest.type === 'group') {
-                  payload.seats_reserved = editForm.seats_reserved;
-                  payload.member_names = (editForm.member_names ?? []).filter(Boolean);
+                  payload.seats_reserved = values.seats_reserved ?? 1;
+                  payload.member_names = (values.member_names ?? [])
+                    .map((entry) => entry.name)
+                    .filter(Boolean);
                 } else {
-                  payload.allow_plus_one = editForm.allow_plus_one;
+                  payload.allow_plus_one = !!values.allow_plus_one;
                 }
 
                 router.put(`/admin/guests/${editingGuest.id}`, payload, {
                   onSuccess: () => setEditingGuest(null),
                 });
-              }}
+              })}
             >
-              <Input
-                placeholder="Nombre"
-                value={editForm.display_name}
-                onChange={(e) => setEditForm(f => ({ ...f, display_name: e.target.value }))}
-              />
+              <Input placeholder="Nombre" {...editRegister("display_name")} />
 
-              <MaskedInput
-                mask="(___) ___-____"
-                replacement={{ _: /\d/ }}
-                value={editForm.contact_phone ?? ''}
-                onChange={(e : any) => setEditForm(f => ({ ...f, contact_phone: e.target.value }))}
-                className={inputBaseClass}
-                placeholder="Contact phone (optional)"
+              <Controller
+                control={editControl}
+                name="contact_phone"
+                render={({ field }) => (
+                  <MaskedInput
+                    mask="(___) ___-____"
+                    replacement={{ _: /\d/ }}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    className={inputBaseClass}
+                    placeholder="Contact phone (optional)"
+                  />
+                )}
               />
 
               <Input
                 placeholder="Contact email (optional)"
                 type="email"
-                value={editForm.contact_email}
-                onChange={(e) => setEditForm(f => ({ ...f, contact_email: e.target.value }))}
+                {...editRegister("contact_email")}
               />
 
               {editingGuest.type === 'group' ? (
@@ -438,31 +513,21 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
                     type="number"
                     min={1}
                     placeholder="Seats reserved"
-                    value={editForm.seats_reserved}
-                    onChange={(e) => setEditForm(f => ({ ...f, seats_reserved: Number(e.target.value) }))}
+                    {...editRegister("seats_reserved", { valueAsNumber: true })}
                   />
                   <div className="grid gap-2">
                     <div className="text-xs font-medium text-muted-foreground">Nombres de asistentes</div>
-                    {(editForm.member_names ?? []).map((name, idx) => (
-                      <div key={idx} className="grid grid-cols-[1fr_36px] gap-2">
+                    {editFields.fields.map((field, idx) => (
+                      <div key={field.id} className="grid grid-cols-[1fr_36px] gap-2">
                         <Input
                           placeholder={`Nombre #${idx + 1}`}
-                          value={name}
-                          onChange={(e) => {
-                            const next = [...editForm.member_names];
-                            next[idx] = e.target.value;
-                            setEditForm(f => ({ ...f, member_names: next }));
-                          }}
+                          {...editRegister(`member_names.${idx}.name` as const)}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => {
-                            const next = [...editForm.member_names];
-                            next.splice(idx, 1);
-                            setEditForm(f => ({ ...f, member_names: next }));
-                          }}
+                          onClick={() => editFields.remove(idx)}
                         >
                           ×
                         </Button>
@@ -472,7 +537,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setEditForm(f => ({ ...f, member_names: [...(f.member_names ?? []), ''] }))}
+                      onClick={() => editFields.append({ name: "" })}
                     >
                       + Agregar nombre
                     </Button>
@@ -480,11 +545,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
                 </>
               ) : (
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={editForm.allow_plus_one}
-                    onChange={(e) => setEditForm(f => ({ ...f, allow_plus_one: e.target.checked }))}
-                  />
+                  <input type="checkbox" {...editRegister("allow_plus_one")} />
                   Permitir acompañante (+1)
                 </label>
               )}

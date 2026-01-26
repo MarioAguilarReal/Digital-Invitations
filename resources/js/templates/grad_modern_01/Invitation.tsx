@@ -23,14 +23,15 @@ type Props = {
 
 function themeVars(theme: any, hostColor?: string | null): React.CSSProperties {
   const t = theme ?? {};
-  const accent = t.accent ?? hostColor ?? "#6D28D9";
+  const accent = t.accent ?? hostColor ?? "#1800a1";
   return {
     ["--accent" as any]: accent,
     ["--accent2" as any]: t.accent2 ?? "#22C55E",
-    ["--surface" as any]: t.surface ?? "rgba(255,255,255,0.70)",
+    ["--surface" as any]:
+      t.surface ?? "color-mix(in srgb, var(--background) 70%, transparent)",
     ["--heroOverlay" as any]: t.heroOverlay ?? "rgba(0,0,0,0.35)",
     ["--radius" as any]: `${t.radius ?? 28}px`,
-    ["--fontDisplay" as any]: t.fontDisplay ?? "ui-serif, Georgia, serif",
+    ["--fontDisplay" as any]: t.fontDisplay ?? "ui-serif, Arial, serif",
     ["--fontBody" as any]: t.fontBody ?? "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
   };
 }
@@ -52,8 +53,13 @@ export default function GradStory01({ invitation, rsvpUrl }: Props) {
   const dateLabel = useMemo(() => formatDateEsMX(invitation.event_date), [invitation.event_date]);
   const timeLabel = useMemo(() => formatTimeEsMX(invitation.event_time), [invitation.event_time]);
 
+  useEffect(() => {
+    console.log("Invitation data:", invitation);
+  }, [invitation]);
+
   const eventDateTime = useMemo(() => {
-    return toLocalDate(invitation.event_date, invitation.event_time);
+    const localDate = toLocalDate(invitation.event_date, invitation.event_time);
+    return localDate;
   }, [invitation.event_date, invitation.event_time]);
 
   const countdown = useCountdown(eventDateTime);
@@ -107,7 +113,7 @@ export default function GradStory01({ invitation, rsvpUrl }: Props) {
           ) : (
             <div className="h-full w-full bg-gradient-to-b from-muted/70 to-background" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/30 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-background" />
         </div>
 
         <div className="relative mx-auto max-w-5xl px-6 pb-12 pt-14 sm:px-10 sm:pb-20 sm:pt-20">
@@ -117,11 +123,11 @@ export default function GradStory01({ invitation, rsvpUrl }: Props) {
             <span className="opacity-80">Graduación</span>
           </div>
 
-          <h1 style={{ fontFamily: "var(--fontDisplay)" }} className="mt-5 text-4xl font-semibold tracking-tight sm:text-6xl">
+          <h1 style={{ fontFamily: "var(--fontDisplay)", color: "white" }} className="mt-5 text-4xl font-semibold tracking-tight sm:text-6xl">
             {heroTitle || "Graduación"}
           </h1>
 
-          <p style={{ fontFamily: "var(--fontBody)" }} className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
+          <p style={{ fontFamily: "var(--fontBody)", color: "white" }} className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
             {settings.hero_subtitle
               ? String(settings.hero_subtitle)
               : "Acompáñanos a celebrar este logro. Tu presencia haría el momento aún más especial."}
@@ -258,9 +264,8 @@ export default function GradStory01({ invitation, rsvpUrl }: Props) {
             </div>
 
             <div
-              className="mt-5 rounded-3xl border p-6 backdrop-blur sm:p-8"
+              className="mt-5 rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8 dark:bg-card/40"
               style={{
-                background: "var(--surface, rgba(255,255,255,0.70))",
                 borderRadius: "var(--radius, 28px)",
               }}
             >
@@ -270,10 +275,7 @@ export default function GradStory01({ invitation, rsvpUrl }: Props) {
                   {dressTags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="rounded-full border px-3 py-1 text-xs font-medium"
-                      style={{
-                        background: "rgba(255,255,255,0.55)",
-                      }}
+                      className="rounded-full border bg-background/70 px-3 py-1 text-xs font-medium dark:bg-background/40"
                     >
                       {tag}
                     </span>
@@ -307,9 +309,8 @@ export default function GradStory01({ invitation, rsvpUrl }: Props) {
             </div>
 
             <div
-              className="mt-5 rounded-3xl border p-6 backdrop-blur sm:p-8"
+              className="mt-5 rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8 dark:bg-card/40"
               style={{
-                background: "var(--surface, rgba(255,255,255,0.70))",
                 borderRadius: "var(--radius, 28px)",
               }}
             >
@@ -494,8 +495,8 @@ function Carousel({ images, autoplay, intervalMs }: { images: string[]; autoplay
   return (
     <div className="grid gap-4">
       <div
-        className="relative overflow-hidden rounded-2xl border"
-        style={{ borderRadius: "var(--radius)", background: "rgba(0,0,0,0.06)" }}
+        className="relative overflow-hidden rounded-2xl border bg-black/5 dark:bg-white/5"
+        style={{ borderRadius: "var(--radius)" }}
       >
         <div className="aspect-[16/10] sm:aspect-[16/7]">
           {/* Prev image (fade out) */}
@@ -550,12 +551,14 @@ function Carousel({ images, autoplay, intervalMs }: { images: string[]; autoplay
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              className="relative overflow-hidden rounded-lg border transition"
+              className={`relative overflow-hidden rounded-lg border transition ${
+                i === index
+                  ? "border-[var(--accent)] ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-background"
+                  : "border-border hover:border-foreground/40"
+              }`}
               style={{
                 width: 72,
                 height: 48,
-                borderColor: i === index ? "var(--accent)" : "rgba(0,0,0,0.15)",
-                boxShadow: i === index ? "0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent)" : "none",
               }}
               aria-label={`Ir a imagen ${i + 1}`}
             >
@@ -617,7 +620,7 @@ function formatDateEsMX(dateStr?: string | null) {
 
 function formatTimeEsMX(timeStr?: string | null) {
   if (!timeStr) return null;
-  const clean = timeStr.slice(0, 5);
+  const clean = timeStr.slice(-8, -3);
   const [hh, mm] = clean.split(":").map(Number);
   if (Number.isNaN(hh) || Number.isNaN(mm)) return timeStr;
 
@@ -632,7 +635,8 @@ function formatTimeEsMX(timeStr?: string | null) {
 
 function toLocalDate(dateStr?: string | null, timeStr?: string | null) {
   if (!dateStr) return null;
-  const time = (timeStr ?? "18:00").slice(0, 5);
+
+  const time = (timeStr ?? "18:00").slice(-8, -3); // default 6pm
   const [y, m, d] = dateStr.split("-").map(Number);
   const [hh, mm] = time.split(":").map(Number);
   if (!y || !m || !d) return null;

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
+import { useForm } from 'react-hook-form';
 
 type Props = {
   invitation: {
@@ -25,37 +26,55 @@ type Props = {
   storeUrl: string;
 };
 
+type RsvpValues = {
+  attending: boolean;
+  plus_one?: boolean;
+  plus_one_name?: string;
+  seats_confirmed?: number;
+};
+
 export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }: Props) {
   const { errors } = usePage().props as { errors?: Record<string, string> };
-  const [attending, setAttending] = useState<boolean>(guest.status === 'confirmed');
-  const [seats, setSeats] = useState<number>(guest.seats_confirmed ?? 0);
   const canPlusOne = !!guest.allow_plus_one;
-  const [plusOne, setPlusOne] = useState<boolean>(
-    canPlusOne && Array.isArray(guest.member_names) && guest.member_names.length > 0
-  );
-  const [plusOneName, setPlusOneName] = useState<string>(
-    canPlusOne && Array.isArray(guest.member_names) ? String(guest.member_names[0] ?? '') : ''
-  );
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+  } = useForm<RsvpValues>({
+    defaultValues: {
+      attending: guest.status === 'confirmed',
+      plus_one: canPlusOne && Array.isArray(guest.member_names) && guest.member_names.length > 0,
+      plus_one_name: canPlusOne && Array.isArray(guest.member_names)
+        ? String(guest.member_names[0] ?? '')
+        : '',
+      seats_confirmed: guest.seats_confirmed ?? 0,
+    },
+  });
+
+  const attending = watch('attending');
+  const plusOne = watch('plus_one');
+  const plusOneName = watch('plus_one_name');
+  const seats = watch('seats_confirmed') ?? 0;
+  const seatsField = register('seats_confirmed', { valueAsNumber: true });
 
   const max = guest.seats_reserved;
 
-  function submitIndividual(e: React.FormEvent) {
-    e.preventDefault();
+  const submitIndividual = handleSubmit((values) => {
     router.post(
       storeUrl,
       {
-        attending,
-        plus_one: canPlusOne ? plusOne : false,
-        plus_one_name: canPlusOne ? plusOneName : "",
+        attending: values.attending,
+        plus_one: canPlusOne ? values.plus_one : false,
+        plus_one_name: canPlusOne ? values.plus_one_name : "",
       },
       { preserveScroll: true }
     );
-  }
+  });
 
-  function submitGroup(e: React.FormEvent) {
-    e.preventDefault();
-    router.post(storeUrl, { seats_confirmed: seats }, { preserveScroll: true });
-  }
+  const submitGroup = handleSubmit((values) => {
+    router.post(storeUrl, { seats_confirmed: values.seats_confirmed ?? 0 }, { preserveScroll: true });
+  });
 
   const deadlineLabel = useMemo(() => {
     if (!invitation.rsvp_deadline_at) return null;
@@ -65,6 +84,9 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
   return (
     <div className="min-h-screen bg-background">
       <Head title={`RSVP • ${invitation.event_name}`} />
+
+      <input type="hidden" {...register('attending')} />
+      <input type="hidden" {...register('plus_one')} />
 
       <div className="mx-auto max-w-2xl px-6 py-10">
         <div className="rounded-2xl border bg-card p-6">
@@ -103,7 +125,7 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
                   <button
                     type="button"
                     disabled={isClosed}
-                    onClick={() => setAttending(true)}
+                    onClick={() => setValue('attending', true)}
                     className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
                       attending ? "bg-primary text-primary-foreground" : "border"
                     }`}
@@ -115,9 +137,9 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
                     type="button"
                     disabled={isClosed}
                     onClick={() => {
-                      setAttending(false);
-                      setPlusOne(false);
-                      setPlusOneName('');
+                      setValue('attending', false);
+                      setValue('plus_one', false);
+                      setValue('plus_one_name', '');
                     }}
                     className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
                       !attending ? "bg-primary text-primary-foreground" : "border"
@@ -130,12 +152,12 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
                 {attending && canPlusOne ? (
                   <div className="grid gap-3 rounded-xl border bg-card p-4">
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={plusOne}
-                        disabled={isClosed}
-                        onChange={(e) => setPlusOne(e.target.checked)}
-                      />
+                        <input
+                          type="checkbox"
+                          checked={!!plusOne}
+                          disabled={isClosed}
+                          onChange={(e) => setValue('plus_one', e.target.checked)}
+                        />
                       Voy con acompañante (+1)
                     </label>
 
@@ -144,8 +166,7 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
                         <input
                           type="text"
                           placeholder="Nombre del acompañante"
-                          value={plusOneName}
-                          onChange={(e) => setPlusOneName(e.target.value)}
+                          {...register('plus_one_name')}
                           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                           disabled={isClosed}
                         />
@@ -179,8 +200,16 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
                     type="number"
                     min={0}
                     max={max}
-                    value={seats}
-                    onChange={(e) => setSeats(Math.max(0, Math.min(max, Number(e.target.value))))}
+                    {...seatsField}
+                    onChange={(e) =>
+                      seatsField.onChange({
+                        ...e,
+                        target: {
+                          ...e.target,
+                          value: Math.max(0, Math.min(max, Number(e.target.value))),
+                        },
+                      })
+                    }
                     className="w-28 rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-50"
                   />
                   <div className="text-sm text-muted-foreground">de {max} lugares reservados</div>
