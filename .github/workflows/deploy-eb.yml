@@ -1,0 +1,70 @@
+name: Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches: [ "master" ]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  test-build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo, pdo_mysql, bcmath, intl, gd
+          coverage: none
+
+      - name: Install PHP dependencies (prod-like)
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+      # Opcional: tests PHP
+      # - name: Run PHP tests
+      #   run: php artisan test
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node deps & build assets
+        run: |
+          npm ci
+          npm run build
+
+      # Opcional: tests/lint JS
+      # - name: Run JS checks
+      #   run: npm run lint
+
+      - name: Prepare deploy artifact (zip)
+        run: |
+          rm -rf node_modules
+          # NO subas .env
+          zip -r deploy.zip . \
+            -x "*.git*" \
+            -x "node_modules/*" \
+            -x "tests/*" \
+            -x ".env" \
+            -x ".github/*"
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: ${{ secrets.EB_APP_NAME }}
+          environment_name: ${{ secrets.EB_ENV_NAME }}
+          region: ${{ secrets.AWS_REGION }}
+          version_label: "prod-${{ github.sha }}"
+          deployment_package: deploy.zip
+          wait_for_environment_recovery: true
