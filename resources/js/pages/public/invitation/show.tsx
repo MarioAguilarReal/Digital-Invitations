@@ -38,9 +38,10 @@ export default function PublicInvitationShow({ invitation, guest, rsvpUrl }: Pro
           <a
             href={rsvpUrl}
             style={{
-              background: "var(--accent)",
+              background: "Black",
               borderRadius: "999px",
               boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
+              color: "White",
             }}
             className="inline-flex w-full max-w-lg items-center justify-center px-6 py-4 text-sm font-semibold text-white transition hover:opacity-95"
           >
