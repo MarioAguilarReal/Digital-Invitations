@@ -143,9 +143,36 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
     alert('Copiado al portapapeles');
   }
 
+  function formatDateEsMX(dateStr?: string | null) {
+    if (!dateStr) return null;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (!y || !m || !d) return dateStr;
+
+    const dt = new Date(y, m-1, d);
+    return new Intl.DateTimeFormat('es-MX', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    }).format(dt);
+  }
+
+  function formatTimeEsMX(timeStr?: string | null) {
+    if (!timeStr) return null;
+    const [h, m] = timeStr.split(':').map(Number);
+    if (h == null || m == null) return timeStr;
+
+    const dt = new Date();
+    dt.setHours(h, m, 0, 0);
+    return new Intl.DateTimeFormat('es-MX', {
+        hour: 'numeric',
+        minute: 'numeric',
+    }).format(dt);
+  }
+
   function buildWhatsAppMessage(guest: Guest) {
-    const date = invitation.event_date ?? '';
-    const time = invitation.event_time ? ` ${invitation.event_time}` : '';
+    const date = formatDateEsMX(invitation.event_date) || '';
+    const time = invitation.event_time ? `a las ${formatTimeEsMX(invitation.event_time.slice(-16))}` : '';
     const venue = invitation.venue_name ? ` en ${invitation.venue_name}` : '';
 
     const invitationUrl = `${location.origin}/i/${invitation.slug}?g=${guest.id}&s=${guest.public_token}`;
@@ -241,7 +268,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
           <div>
             <h1 className="text-2xl font-semibold">{invitation.event_name}</h1>
             <div className="text-sm text-muted-foreground">
-              {invitation.venue_name} • {invitation.event_date}
+              {invitation.venue_name} • {formatDateEsMX(invitation.event_date)}
             </div>
           </div>
 
