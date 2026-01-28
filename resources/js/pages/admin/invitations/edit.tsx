@@ -44,7 +44,7 @@ type InvitationFormValues = {
   venue_name: string;
   venue_address?: string | null;
   event_date: string;
-  event_time: string;
+  event_time: string | Date;
   capacity: number;
   rsvp_deadline_at?: string | null;
   gift_type?: string | null;
@@ -71,7 +71,7 @@ export default function EditInvitation({ templates, invitation }: Props) {
       venue_name: invitation.venue_name ?? "",
       venue_address: invitation.venue_address ?? "",
       event_date: invitation.event_date ?? "",
-      event_time: invitation.event_time ?? "",
+      event_time: invitation.event_time.slice(-8) ?? "",
       capacity: invitation.capacity ?? 0,
       rsvp_deadline_at: invitation.rsvp_deadline_at ?? "",
       gift_type: invitation.gift_type ?? "",

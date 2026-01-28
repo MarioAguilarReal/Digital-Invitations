@@ -98,338 +98,401 @@ export default function GradStory01({ invitation, rsvpUrl }: Props) {
   const giftDetails = (giftCfg.details ?? "").toString();
 
   return (
-    <div style={themeVars(theme, invitation.host_color)} className="min-h-screen bg-background text-foreground">
-      {/* HERO */}
-      <header className="relative overflow-hidden">
-        {/* background */}
-        <div className="absolute inset-0">
-          {heroImage ? (
-            <img
-              src={heroImage}
-              alt=""
-              className="h-full w-full object-cover opacity-70"
-              loading="lazy"
-            />
-          ) : (
-            <div className="h-full w-full bg-gradient-to-b from-muted/70 to-background" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-background" />
-        </div>
-
-        <div className="relative mx-auto max-w-5xl px-6 pb-12 pt-14 sm:px-10 sm:pb-20 sm:pt-20">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-card/60 px-4 py-2 text-xs font-medium backdrop-blur">
-            <span className="opacity-80">Invitación</span>
-            <span className="opacity-40">•</span>
-            <span className="opacity-80">Graduación</span>
-          </div>
-
-          <h1 style={{ fontFamily: "var(--fontDisplay)", color: "white" }} className="mt-5 text-4xl font-semibold tracking-tight sm:text-6xl">
-            {heroTitle || "Graduación"}
-          </h1>
-
-          <p style={{ fontFamily: "var(--fontBody)", color: "white" }} className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            {settings.hero_subtitle
-              ? String(settings.hero_subtitle)
-              : "Acompáñanos a celebrar este logro. Tu presencia haría el momento aún más especial."}
-          </p>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <StatChip label="Fecha" value={dateLabel ?? "—"} />
-            <StatChip label="Hora" value={timeLabel ?? "—"} />
-            <StatChip label="Lugar" value={invitation.venue_name || "—"} />
-          </div>
-
-          {/* Countdown */}
-          <div className="mt-10 rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="text-sm font-medium text-muted-foreground">Cuenta regresiva</div>
-                <div className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                  {settings.countdown_title ? String(settings.countdown_title) : "Nos vemos muy pronto"}
-                </div>
+      <div
+          style={themeVars(theme, invitation.host_color)}
+          className="min-h-screen bg-background text-foreground"
+      >
+          {/* HERO */}
+          <header className="relative overflow-hidden">
+              {/* background */}
+              <div className="absolute inset-0">
+                  {heroImage ? (
+                      <img
+                          src={heroImage}
+                          alt=""
+                          className="h-full w-full object-cover opacity-70"
+                          loading="lazy"
+                      />
+                  ) : (
+                      <div className="h-full w-full bg-gradient-to-b from-muted/70 to-background" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-background" />
               </div>
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-xl border bg-background/60 px-4 py-3 text-sm font-medium backdrop-blur transition hover:bg-background"
-              >
-                Ver ubicación
-              </a>
-            </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <TimeBox label="Días" value={countdown.days} />
-              <TimeBox label="Horas" value={countdown.hours} />
-              <TimeBox label="Minutos" value={countdown.minutes} />
-              <TimeBox label="Segundos" value={countdown.seconds} />
-            </div>
-
-            <div className="mt-4 text-xs text-muted-foreground">
-              {eventDateTime ? (
-                <>
-                  Fecha del evento: <span className="font-medium text-foreground">{dateLabel}</span>{" "}
-                  <span className="opacity-60">•</span>{" "}
-                  <span className="font-medium text-foreground">{timeLabel}</span>
-                </>
-              ) : (
-                "Configura fecha y hora para activar la cuenta regresiva."
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* BODY */}
-      <main className="mx-auto max-w-5xl px-6 pb-28 pt-10 sm:px-10">
-        {/* Big message section */}
-        <section className="grid gap-6 sm:grid-cols-5">
-          <div className="sm:col-span-2">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {settings.section_message_title ? String(settings.section_message_title) : "Un día para recordar"}
-            </h2>
-            <p style={{ fontFamily: "var(--fontBody)" }} className="mt-3 text-sm text-muted-foreground sm:text-base">
-              {settings.section_message_subtitle
-                ? String(settings.section_message_subtitle)
-                : "Te compartimos los detalles y algunos momentos que nos trajeron hasta aquí."}
-            </p>
-          </div>
-
-          <div className="sm:col-span-3">
-            <div className="rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8">
-              {primaryMessage.length ? (
-                <div className="grid gap-4 text-base leading-relaxed sm:text-lg">
-                  {primaryMessage.map((t, idx) => (
-                    <p style={{ fontFamily: "var(--fontBody)" }} key={idx} className="text-muted-foreground">
-                      {t}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ fontFamily: "var(--fontBody)" }} className="text-muted-foreground">
-                  Agrega textos complementarios para mostrar un mensaje largo aquí.
-                </p>
-              )}
-              {invitation.host_name ? (
-                <div className="mt-6 text-sm text-muted-foreground">
-                  Con cariño,{" "}
-                  <span className="font-semibold text-foreground">{invitation.host_name}</span>.
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        {/* Gallery / Carousel */}
-        <section className="mt-10">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                {settings.section_gallery_title ? String(settings.section_gallery_title) : "Momentos"}
-              </h2>
-              <p style={{ fontFamily: "var(--fontBody)" }} className="mt-2 text-sm text-muted-foreground sm:text-base">
-                {settings.section_gallery_subtitle
-                  ? String(settings.section_gallery_subtitle)
-                  : "Un carrusel de recuerdos antes del gran día."}
-              </p>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {gallery.length ? `${gallery.length} fotos` : "Configura gallery_images"}
-            </div>
-          </div>
-
-          <div className="mt-5 rounded-3xl border bg-card/60 p-4 backdrop-blur sm:p-6">
-            <Carousel
-              images={gallery}
-              autoplay={settings.carousel?.autoplay}
-              intervalMs={settings.carousel?.intervalMs}
-            />
-          </div>
-        </section>
-
-        {/* Details section */}
-        <section className="mt-10 grid gap-4 sm:grid-cols-2">
-          <section className="mt-10">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  Código de vestimenta
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-                  {settings.dress_code_hint
-                    ? String(settings.dress_code_hint)
-                    : "Sugerencia para que todos nos veamos increíbles en las fotos 📸"}
-                </p>
-              </div>
-            </div>
-
-            <div
-              className="mt-5 rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8 dark:bg-card/40"
-              style={{
-                borderRadius: "var(--radius, 28px)",
-              }}
-            >
-              {/* chips */}
-              {dressTags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {dressTags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="rounded-full border bg-background/70 px-3 py-1 text-xs font-medium dark:bg-background/40"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : dressFallback ? (
-                <div className="text-sm text-muted-foreground">{dressFallback}</div>
-              ) : (
-                <div className="text-sm text-muted-foreground">—</div>
-              )}
-
-              {/* optional: extra note */}
-              {settings.dress_code_note ? (
-                <div className="mt-4 rounded-2xl border bg-background/60 p-4 text-sm text-muted-foreground">
-                  {String(settings.dress_code_note)}
-                </div>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="mt-10">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  {giftTitle || "Regalo"}
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-                  {giftDesc || invitation.gift_type || "Tu presencia es lo más importante."}
-                </p>
-              </div>
-            </div>
-
-            <div
-              className="mt-5 rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8 dark:bg-card/40"
-              style={{
-                borderRadius: "var(--radius, 28px)",
-              }}
-            >
-              {/* highlight card */}
-              <div className="rounded-2xl border bg-background/60 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-semibold">
-                      {giftTitle || invitation.gift_type || "Sugerencia"}
-                    </div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {giftDesc ||
-                        invitation.gift_type ||
-                        "Si deseas obsequiar algo, aquí puedes ver opciones."}
-                    </div>
+              <div className="relative mx-auto max-w-5xl px-6 pt-14 pb-12 sm:px-10 sm:pt-20 sm:pb-20">
+                  <div className="inline-flex items-center gap-2 rounded-full border bg-card/60 px-4 py-2 text-xs font-medium backdrop-blur">
+                      <span className="opacity-80">Invitación</span>
+                      <span className="opacity-40">•</span>
+                      <span className="opacity-80">Graduación</span>
                   </div>
+
+                  <h1
+                      style={{
+                          fontFamily: 'var(--fontDisplay)',
+                          color: 'white',
+                      }}
+                      className="mt-5 text-4xl font-semibold tracking-tight sm:text-6xl"
+                  >
+                      {heroTitle || 'Graduación'}
+                  </h1>
+
+                  <p
+                      style={{ fontFamily: 'var(--fontBody)', color: 'white' }}
+                      className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg"
+                  >
+                      {settings.hero_subtitle
+                          ? String(settings.hero_subtitle)
+                          : 'Acompáñanos a celebrar este logro. Tu presencia haría el momento aún más especial.'}
+                  </p>
+
+                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                      <StatChip label="Fecha" value={dateLabel ?? '—'} />
+                      <StatChip label="Hora" value={timeLabel ?? '—'} />
+                      <StatChip
+                          label="Lugar"
+                          value={invitation.venue_name || '—'}
+                      />
+                  </div>
+
+                  {/* Countdown */}
+                  <div className="mt-10 rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                              <div className="text-sm font-medium text-muted-foreground">
+                                  Cuenta regresiva
+                              </div>
+                              <div className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+                                  {settings.countdown_title
+                                      ? String(settings.countdown_title)
+                                      : 'Nos vemos muy pronto'}
+                              </div>
+                          </div>
+                          <a
+                              href={mapsUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center justify-center rounded-xl border bg-background/60 px-4 py-3 text-sm font-medium backdrop-blur transition hover:bg-background"
+                          >
+                              Ver ubicación
+                          </a>
+                      </div>
+
+                      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          <TimeBox label="Días" value={countdown.days} />
+                          <TimeBox label="Horas" value={countdown.hours} />
+                          <TimeBox label="Minutos" value={countdown.minutes} />
+                          <TimeBox label="Segundos" value={countdown.seconds} />
+                      </div>
+
+                      <div className="mt-4 text-xs text-muted-foreground">
+                          {eventDateTime ? (
+                              <>
+                                  Fecha del evento:{' '}
+                                  <span className="font-medium text-foreground">
+                                      {dateLabel}
+                                  </span>{' '}
+                                  <span className="opacity-60">•</span>{' '}
+                                  <span className="font-medium text-foreground">
+                                      {timeLabel}
+                                  </span>
+                              </>
+                          ) : (
+                              'Configura fecha y hora para activar la cuenta regresiva.'
+                          )}
+                      </div>
+                  </div>
+              </div>
+          </header>
+
+          {/* BODY */}
+          <main className="mx-auto max-w-5xl px-6 pt-10 pb-28 sm:px-10">
+              {/* Big message section */}
+              <section className="grid gap-6 sm:grid-cols-5">
+                  <div className="sm:col-span-2">
+                      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                          {settings.section_message_title
+                              ? String(settings.section_message_title)
+                              : 'Un día para recordar'}
+                      </h2>
+                      <p
+                          style={{ fontFamily: 'var(--fontBody)' }}
+                          className="mt-3 text-sm text-muted-foreground sm:text-base"
+                      >
+                          {settings.section_message_subtitle
+                              ? String(settings.section_message_subtitle)
+                              : 'Te compartimos los detalles y algunos momentos que nos trajeron hasta aquí.'}
+                      </p>
+                  </div>
+
+                  <div className="sm:col-span-3">
+                      <div className="rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8">
+                          {primaryMessage.length ? (
+                              <div className="grid gap-4 text-base leading-relaxed sm:text-lg">
+                                  {primaryMessage.map((t, idx) => (
+                                      <p
+                                          style={{
+                                              fontFamily: 'var(--fontBody)',
+                                          }}
+                                          key={idx}
+                                          className="text-muted-foreground"
+                                      >
+                                          {t}
+                                      </p>
+                                  ))}
+                              </div>
+                          ) : (
+                              <p
+                                  style={{ fontFamily: 'var(--fontBody)' }}
+                                  className="text-muted-foreground"
+                              >
+                                  Agrega textos complementarios para mostrar un
+                                  mensaje largo aquí.
+                              </p>
+                          )}
+                          {invitation.host_name ? (
+                              <div className="mt-6 text-sm text-muted-foreground">
+                                  Con cariño,{' '}
+                                  <span className="font-semibold text-foreground">
+                                      {invitation.host_name}
+                                  </span>
+                                  .
+                              </div>
+                          ) : null}
+                      </div>
+                  </div>
+              </section>
+
+              {/* Gallery / Carousel */}
+              <section className="mt-10">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                              {settings.section_gallery_title
+                                  ? String(settings.section_gallery_title)
+                                  : 'Momentos'}
+                          </h2>
+                          <p
+                              style={{ fontFamily: 'var(--fontBody)' }}
+                              className="mt-2 text-sm text-muted-foreground sm:text-base"
+                          >
+                              {settings.section_gallery_subtitle
+                                  ? String(settings.section_gallery_subtitle)
+                                  : 'Un carrusel de recuerdos antes del gran día.'}
+                          </p>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                          {gallery.length
+                              ? `${gallery.length} fotos`
+                              : 'Configura gallery_images'}
+                      </div>
+                  </div>
+
+                  <div className="mt-5 rounded-3xl border bg-card/60 p-4 backdrop-blur sm:p-6">
+                      <Carousel
+                          images={gallery}
+                          autoplay={settings.carousel?.autoplay}
+                          intervalMs={settings.carousel?.intervalMs}
+                      />
+                  </div>
+              </section>
+
+              {/* Details section */}
+              <section className="mt-10 grid gap-6">
+                  <section>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                                  Código de vestimenta
+                              </h2>
+                              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                                  {settings.dress_code_hint
+                                      ? String(settings.dress_code_hint)
+                                      : 'Sugerencia para que todos nos veamos increíbles en las fotos 📸'}
+                              </p>
+                          </div>
+                      </div>
+
+                      <div
+                          className="mt-5 rounded-3xl border bg-card/60 p-6 backdrop-blur sm:p-8 dark:bg-card/40"
+                          style={{
+                              borderRadius: 'var(--radius, 28px)',
+                          }}
+                      >
+                          {/* chips */}
+                          {dressTags.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                  {dressTags.map((tag, idx) => (
+                                      <span
+                                          key={idx}
+                                          className="rounded-full border bg-background/70 px-3 py-1 text font-medium dark:bg-background/40"
+                                      >
+                                          {tag}
+                                      </span>
+                                  ))}
+                              </div>
+                          ) : dressFallback ? (
+                              <div className="text-base">
+                                  {dressFallback}
+                              </div>
+                          ) : (
+                              <div className="text-sm text-muted-foreground">
+                                  —
+                              </div>
+                          )}
+
+                          {/* optional: extra note */}
+                          {settings.dress_code_note ? (
+                              <div className="mt-4 rounded-2xl border bg-background/60 p-4 text-sm text-muted-foreground">
+                                  {String(settings.dress_code_note)}
+                              </div>
+                          ) : null}
+                      </div>
+                  </section>
+
+                  <section className="mt-8 mb-8">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                          <div style={{textAlign: 'center', width: '100%'}}>
+                              <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-2xl">
+                                  Tu presencia y poder celebrar este logro
+                                  contigo es el mejor regalo que puedes darme.
+                                  <br />
+                                  Pero si quisieras expresar tu cariño,
+                                  agradecería que fuera:
+                              </p>
+                          </div>
+                      </div>
+
+                      <div className="mt-5 text-xl text-foreground" style={{textAlign:'center'}}>
+                          { invitation.gift_type ||
+                              giftTitle ||
+                              'Sugerencia de regalo'
+                          }
+                      </div>
+
+                      {/* details */}
+                      {giftDetails.trim() ? (
+                          <details className="mt-4">
+                              <summary className="cursor-pointer text-sm font-semibold select-none">
+                                  {giftCtaLabel || 'Ver detalles'}
+                              </summary>
+
+                              <pre className="mt-3 rounded-2xl border bg-background/60 p-4 text-xs whitespace-pre-wrap text-muted-foreground">
+                                  {giftDetails}
+                              </pre>
+                          </details>
+                      ) : null}
+
+                      {/* optional: copy button */}
+                      {giftDetails.trim() ? (
+                          <button
+                              type="button"
+                              onClick={() =>
+                                  navigator.clipboard?.writeText(giftDetails)
+                              }
+                              className="mt-4 inline-flex items-center justify-center rounded-xl border bg-background/60 px-4 py-3 text-sm font-medium backdrop-blur transition hover:bg-background"
+                          >
+                              Copiar detalles
+                          </button>
+                      ) : null}
+                  </section>
+              </section>
+
+              {/* Map preview */}
+              <section className="mt-10">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                              {settings.section_map_title
+                                  ? String(settings.section_map_title)
+                                  : 'Ubicación'}
+                          </h2>
+                          <p
+                              style={{ fontFamily: 'var(--fontBody)' }}
+                              className="mt-2 text-sm text-muted-foreground sm:text-base"
+                          >
+                              {invitation.venue_address ||
+                                  'Abre el mapa para ver la ruta.'}
+                          </p>
+                      </div>
+
+                      <a
+                          href={mapsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center rounded-xl border bg-background/60 px-4 py-3 text-sm font-medium backdrop-blur transition hover:bg-background"
+                      >
+                          Abrir en Google Maps
+                      </a>
+                  </div>
+
+                  <div className="mt-5 overflow-hidden rounded-3xl border bg-card/60 backdrop-blur">
+                      {/* Google maps preview */}
+                      <div className="aspect-[16/10] w-full sm:aspect-[16/7]">
+                          {mapsQuery ? (
+                              <iframe
+                                  title="Mapa"
+                                  src={mapsEmbedUrl}
+                                  className="h-full w-full"
+                                  loading="lazy"
+                                  referrerPolicy="no-referrer-when-downgrade"
+                              />
+                          ) : (
+                              <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                                  Configura el lugar/dirección para mostrar el
+                                  mapa.
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </section>
+              <section className="mt-10">
+                  <h2
+                      style={{ fontFamily: 'var(--fontDisplay)' }}
+                      className="text-2xl font-semibold tracking-tight sm:text-3xl"
+                  >
+                      Itinerario
+                  </h2>
 
                   <div
-                    className="shrink-0 rounded-2xl border px-3 py-2 text-xs font-semibold"
-                    style={{ color: "var(--accent, #6D28D9)" }}
+                      className="mt-5 rounded-3xl border p-6 backdrop-blur"
+                      style={{
+                          background: 'var(--surface)',
+                          borderRadius: 'var(--radius)',
+                      }}
                   >
-                    💝
+                      {schedule.length ? (
+                          <ol className="grid gap-4">
+                              {schedule.map((item: any, idx: number) => (
+                                  <li
+                                      key={idx}
+                                      className="grid grid-cols-[80px_1fr] gap-4"
+                                  >
+                                      <div className="text-sm font-semibold tabular-nums">
+                                          {String(item.time ?? '—')}
+                                      </div>
+                                      <div>
+                                          <div className="text-sm font-semibold">
+                                              {String(item.title ?? '—')}
+                                          </div>
+                                          {item.desc ? (
+                                              <div className="text-sm text-muted-foreground">
+                                                  {String(item.desc)}
+                                              </div>
+                                          ) : null}
+                                      </div>
+                                  </li>
+                              ))}
+                          </ol>
+                      ) : (
+                          <div className="text-sm text-muted-foreground">
+                              Configura <code>settings.schedule</code> para
+                              mostrar el itinerario.
+                          </div>
+                      )}
                   </div>
-                </div>
-              </div>
-
-              {/* details */}
-              {giftDetails.trim() ? (
-                <details className="mt-4">
-                  <summary className="cursor-pointer select-none text-sm font-semibold">
-                    {giftCtaLabel || "Ver detalles"}
-                  </summary>
-
-                  <pre className="mt-3 whitespace-pre-wrap rounded-2xl border bg-background/60 p-4 text-xs text-muted-foreground">
-          {giftDetails}
-                  </pre>
-                </details>
-              ) : null}
-
-              {/* optional: copy button */}
-              {giftDetails.trim() ? (
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard?.writeText(giftDetails)}
-                  className="mt-4 inline-flex items-center justify-center rounded-xl border bg-background/60 px-4 py-3 text-sm font-medium backdrop-blur transition hover:bg-background"
-                >
-                  Copiar detalles
-                </button>
-              ) : null}
-            </div>
-          </section>
-        </section>
-
-        {/* Map preview */}
-        <section className="mt-10">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                {settings.section_map_title ? String(settings.section_map_title) : "Ubicación"}
-              </h2>
-              <p style={{ fontFamily: "var(--fontBody)" }} className="mt-2 text-sm text-muted-foreground sm:text-base">
-                {invitation.venue_address || "Abre el mapa para ver la ruta."}
-              </p>
-            </div>
-
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-xl border bg-background/60 px-4 py-3 text-sm font-medium backdrop-blur transition hover:bg-background"
-            >
-              Abrir en Google Maps
-            </a>
-          </div>
-
-          <div className="mt-5 overflow-hidden rounded-3xl border bg-card/60 backdrop-blur">
-            {/* Google maps preview */}
-            <div className="aspect-[16/10] w-full sm:aspect-[16/7]">
-              {mapsQuery ? (
-                <iframe
-                  title="Mapa"
-                  src={mapsEmbedUrl}
-                  className="h-full w-full"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-                  Configura el lugar/dirección para mostrar el mapa.
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-        <section className="mt-10">
-          <h2 style={{ fontFamily: "var(--fontDisplay)" }} className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Itinerario
-          </h2>
-
-          <div className="mt-5 rounded-3xl border p-6 backdrop-blur" style={{ background: "var(--surface)", borderRadius: "var(--radius)" }}>
-            {schedule.length ? (
-              <ol className="grid gap-4">
-                {schedule.map((item: any, idx: number) => (
-                  <li key={idx} className="grid grid-cols-[80px_1fr] gap-4">
-                    <div className="text-sm font-semibold tabular-nums">{String(item.time ?? "—")}</div>
-                    <div>
-                      <div className="text-sm font-semibold">{String(item.title ?? "—")}</div>
-                      {item.desc ? <div className="text-sm text-muted-foreground">{String(item.desc)}</div> : null}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <div className="text-sm text-muted-foreground">Configura <code>settings.schedule</code> para mostrar el itinerario.</div>
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
+              </section>
+          </main>
+      </div>
   );
 }
 
