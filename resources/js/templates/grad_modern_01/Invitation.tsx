@@ -561,7 +561,7 @@ function Carousel({ images, autoplay, intervalMs }: { images: string[]; autoplay
         className="relative overflow-hidden rounded-2xl border bg-black/5 dark:bg-white/5"
         style={{ borderRadius: "var(--radius)" }}
       >
-        <div className="aspect-[16/10] sm:aspect-[16/7]">
+        <div className="aspect-[16/9] sm:aspect-[16/9]">
           {/* Prev image (fade out) */}
           {prevIndex !== null && safe[prevIndex] ? (
             <img
