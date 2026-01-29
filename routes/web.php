@@ -19,7 +19,7 @@ Route::get('/', function () {
 
 Route::get('/i/{slug}', [PublicInvitationController::class, 'show'])->name('public.invitation.show');
 
-Route::get('/rsvp/confirmation', [PublicRsvpController::class, 'confirmation'])
+Route::get('/rsvp/confirmation/{invitation_url}', [PublicRsvpController::class, 'confirmation'])
     ->name('public.rsvp.confirmation');
 
 Route::get('/rsvp/{guest}', [PublicRsvpController::class, 'show'])

@@ -82,7 +82,7 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
   }, [invitation.rsvp_deadline_at]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center">
       <Head title={`RSVP • ${invitation.event_name}`} />
 
       <input type="hidden" {...register('attending')} />

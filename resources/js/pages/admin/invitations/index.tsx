@@ -71,10 +71,16 @@ export default function InvitationsIndex({ invitations }: { invitations: Invitat
                   <td className="px-4 py-3">{inv.status}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex flex-wrap justify-end gap-2">
-                      <Link className="underline" href={`/admin/invitations/${inv.id}`}>
+                      <Link
+                        className="bg-white-500 hover:bg-gray-700 hover:text-white text-black font-bold py-1 px-3 rounded border"
+                        href={`/admin/invitations/${inv.id}`}
+                      >
                         Open
                       </Link>
-                      <Link className="underline" href={`/admin/invitations/${inv.id}/edit`}>
+                      <Link
+                        className="bg-white-500 hover:bg-gray-700 hover:text-white text-black font-bold py-1 px-3 rounded border"
+                        href={`/admin/invitations/${inv.id}/edit`}
+                      >
                         Edit
                       </Link>
                       <Button

@@ -104,13 +104,14 @@ class PublicRsvpController extends Controller
                 $guest->status = 'confirmed';
             }
         }
-
         $guest->save();
 
-        return redirect()->route('public.rsvp.confirmation');
+        return redirect()->route('public.rsvp.confirmation', ['invitation_url' => $invitation->slug]);
     }
 
-    public function confirmation() {
-        return Inertia::render('public/rsvp/confirmation/show');
+    public function confirmation(Request $request, string $invitation_url) {
+        return Inertia::render('public/rsvp/confirmation/show', [
+            'invitation_url' => $invitation_url,
+        ]);
     }
 }
