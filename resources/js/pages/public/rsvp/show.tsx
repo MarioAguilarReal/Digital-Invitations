@@ -56,6 +56,7 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
   const max = guest.seats_reserved;
   const [showConfirmDeclineModal, setShowConfirmDeclineModal] = useState(false);
   const [groupConfirmation, setGroupConfirmation] = useState(false);
+  const [showAlertSeatsMessage, setShowAlertSeatsMessage] = useState(false);
 
   const submitIndividual = handleSubmit((values) => {
     if (!values.attending) {
@@ -97,6 +98,10 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
   }
 
   const submitGroup = handleSubmit((values) => {
+    if (values.seats_confirmed === 0) {
+      setShowAlertSeatsMessage(true);
+      return;
+    }
     router.post(storeUrl, { seats_confirmed: values.seats_confirmed ?? 0 }, { preserveScroll: true });
   });
 
@@ -264,6 +269,9 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
                       />
                       <div className="text-sm text-muted-foreground">de {max} lugares reservados</div>
                     </div>
+                    {showAlertSeatsMessage && (
+                      <div className="text-xs text-destructive">Debes confirmar al menos un lugar.</div>
+                    )}
 
                     <button
                       disabled={isClosed}
