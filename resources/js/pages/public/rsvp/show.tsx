@@ -1,6 +1,8 @@
-import React, { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useForm } from 'react-hook-form';
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 type Props = {
   invitation: {
@@ -36,12 +38,7 @@ type RsvpValues = {
 export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }: Props) {
   const { errors } = usePage().props as { errors?: Record<string, string> };
   const canPlusOne = !!guest.allow_plus_one;
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-  } = useForm<RsvpValues>({
+  const { register, handleSubmit, setValue, watch} = useForm<RsvpValues>({
     defaultValues: {
       attending: guest.status === 'confirmed',
       plus_one: canPlusOne && Array.isArray(guest.member_names) && guest.member_names.length > 0,
@@ -54,13 +51,17 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
 
   const attending = watch('attending');
   const plusOne = watch('plus_one');
-  const plusOneName = watch('plus_one_name');
-  const seats = watch('seats_confirmed') ?? 0;
   const seatsField = register('seats_confirmed', { valueAsNumber: true });
 
   const max = guest.seats_reserved;
+  const [showConfirmDeclineModal, setShowConfirmDeclineModal] = useState(false);
+  const [groupConfirmation, setGroupConfirmation] = useState(false);
 
   const submitIndividual = handleSubmit((values) => {
+    if (!values.attending) {
+      setShowConfirmDeclineModal(true);
+      return;
+    }
     router.post(
       storeUrl,
       {
@@ -71,6 +72,29 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
       { preserveScroll: true }
     );
   });
+
+  const secureDecline = () => {
+    if (guest.type === 'individual') {
+      router.post(
+        storeUrl,
+        {
+          attending: false,
+          plus_one: false,
+          plus_one_name: "",
+        },
+        { preserveScroll: true }
+      );
+    } else {
+      router.post(
+        storeUrl,
+        {
+          seats_confirmed: 0,
+        },
+        { preserveScroll: true }
+      );
+    }
+    setShowConfirmDeclineModal(false);
+  }
 
   const submitGroup = handleSubmit((values) => {
     router.post(storeUrl, { seats_confirmed: values.seats_confirmed ?? 0 }, { preserveScroll: true });
@@ -191,46 +215,108 @@ export default function PublicRsvpShow({ invitation, guest, isClosed, storeUrl }
                 </div>
               </form>
             ) : (
-              <form onSubmit={submitGroup} className="grid gap-3">
-                <div className="text-sm font-medium">¿Cuántas personas asistirán?</div>
-
-                <div className="flex items-center gap-3">
-                  <input
+              <>
+                <div className="text-sm font-medium mb-3">¿Deseas confirmar la asistencia para este grupo?</div>
+                <div className="flex items-center gap-3 mb-6">
+                  <button
+                    type="button"
                     disabled={isClosed}
-                    type="number"
-                    min={0}
-                    max={max}
-                    {...seatsField}
-                    onChange={(e) =>
-                      seatsField.onChange({
-                        ...e,
-                        target: {
-                          ...e.target,
-                          value: Math.max(0, Math.min(max, Number(e.target.value))),
-                        },
-                      })
-                    }
-                    className="w-28 rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-50"
-                  />
-                  <div className="text-sm text-muted-foreground">de {max} lugares reservados</div>
-                </div>
+                    onClick={() => setGroupConfirmation(true)}
+                    className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
+                      groupConfirmation ? "bg-primary text-primary-foreground" : "border"
+                    }`}
+                  >
+                    Sí, confirmar asistencia
+                  </button>
 
-                <button
-                  disabled={isClosed}
-                  type="submit"
-                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-                >
-                  Guardar confirmación
-                </button>
-
-                <div className="text-xs text-muted-foreground">
-                  Estado actual: <span className="font-medium text-foreground">{guest.status}</span>
+                  <button
+                    type="button"
+                    disabled={isClosed}
+                    onClick={() => setGroupConfirmation(false)}
+                    className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
+                      !groupConfirmation ? "bg-primary text-primary-foreground" : "border"
+                    }`}
+                  >
+                    No podremos asistir
+                  </button>
                 </div>
-              </form>
+                {groupConfirmation ? (
+                  <form onSubmit={submitGroup} className="grid gap-3">
+                    <div className="text-sm font-medium">¿Cuántas personas asistirán?</div>
+
+                    <div className="flex items-center gap-3">
+                      <input
+                        disabled={isClosed}
+                        type="number"
+                        min={0}
+                        max={max}
+                        {...seatsField}
+                        onChange={(e) =>
+                          seatsField.onChange({
+                            ...e,
+                            target: {
+                              ...e.target,
+                              value: Math.max(0, Math.min(max, Number(e.target.value))),
+                            },
+                          })
+                        }
+                        className="w-28 rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-50"
+                      />
+                      <div className="text-sm text-muted-foreground">de {max} lugares reservados</div>
+                    </div>
+
+                    <button
+                      disabled={isClosed}
+                      type="submit"
+                      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                    >
+                      Guardar confirmación
+                    </button>
+
+                    <div className="text-xs text-muted-foreground">
+                      Estado actual: <span className="font-medium text-foreground">{guest.status}</span>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="mt-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
+                    Al seleccionar "No podremos asistir", se rechazará la invitación para todo el grupo.
+                    <div className="mt-3">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="destructive" disabled={isClosed} onClick={() => setShowConfirmDeclineModal(true)}>
+                            Rechazar invitación
+                          </Button>
+                        </DialogTrigger>
+                      </Dialog>
+                    </div>
+                  </div>
+                )
+                }
+              </>
             )}
           </div>
         </div>
       </div>
+      <DeclineConfirmationModal showModal={showConfirmDeclineModal} setShowModal={(cancel => setShowConfirmDeclineModal(cancel))} setSecureDecline={secureDecline} />
     </div>
   );
+}
+
+
+const DeclineConfirmationModal = (props: { showModal: boolean, setShowModal: (cancel: boolean) => void, setSecureDecline: () => void}) => {
+  return (
+    <Dialog open={!!props.showModal} onOpenChange={props.setShowModal}>
+      <DialogContent>
+        <DialogTitle className="text-lg font-semibold">Confirmar rechazo</DialogTitle>
+        <DialogDescription className="mt-4 text-sm text-muted-foreground">
+          ¿Estás seguro de que deseas rechazar la invitación? Esta acción no se puede deshacer.
+        </DialogDescription>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="default" onClick={() => props.setShowModal(false)}>Cambiar Respuesta</Button>
+          <Button variant="destructive" onClick={props.setSecureDecline}>Rechazar invitación</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }
