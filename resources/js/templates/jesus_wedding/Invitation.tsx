@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import './invitation.scss';
 
 type Invitation = {
     event_name: string;
@@ -39,7 +40,7 @@ function themeVars(theme: any, hostColor?: string | null): React.CSSProperties {
     };
 }
 
-export default function GradStory02({ invitation, rsvpUrl }: Props) {
+function JesusWedding({ invitation, rsvpUrl }: Props) {
     const settings = invitation.settings ?? {};
 
     // Gallery images via settings.gallery_images: string[]
@@ -121,6 +122,7 @@ export default function GradStory02({ invitation, rsvpUrl }: Props) {
         <div
             style={themeVars(theme, invitation.host_color)}
             className="min-h-screen bg-background text-foreground"
+            id='jesus-wedding'
         >
             {/* HERO */}
             <header className="relative overflow-hidden">
@@ -524,6 +526,8 @@ export default function GradStory02({ invitation, rsvpUrl }: Props) {
         </div>
     );
 }
+
+export default JesusWedding;
 
 function Card({
     title,
