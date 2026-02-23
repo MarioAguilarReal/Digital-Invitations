@@ -1,4 +1,266 @@
-#jesus-wedding{
+/* ═══════════════════════════════════════════════════════════════
+   Denisse & Jesús Wedding Invitation
+   Tema: Elegancia Noir — Negro, Crema y Verde Olivo
+   ═══════════════════════════════════════════════════════════════ */
+
+#jesus-wedding {
+  /* ── Override Tailwind v4 oklch CSS vars for dark/olive theme ── */
+  --background:         oklch(0.08 0 0);
+  --foreground:         oklch(0.93 0.012 90);
+  --card:               oklch(0.10 0.002 90);
+  --card-foreground:    oklch(0.93 0.012 90);
+  --popover:            oklch(0.10 0.002 90);
+  --popover-foreground: oklch(0.93 0.012 90);
+  --primary:            oklch(0.32 0.08 128);
+  --primary-foreground: oklch(0.08 0 0);
+  --secondary:          oklch(0.15 0 0);
+  --secondary-foreground: oklch(0.93 0.012 90);
+  --muted:              oklch(0.14 0 0);
+  --muted-foreground:   oklch(0.52 0.022 75);
+  --accent:             oklch(0.32 0.08 128);
+  --accent-foreground:  oklch(0.08 0 0);
+  --border:             oklch(0.32 0.08 128 / 0.45);
+  --input:              oklch(0.15 0 0);
+  --ring:               oklch(0.32 0.08 128 / 0.50);
+  --radius:             1.25rem;
+
+  /* ── Custom wedding variables ── */
+  --jw-olive:        #3f4c1b;
+  --jw-olive-dim:    rgba(63, 76, 27, 0.15);
+  --jw-olive-border: rgba(63, 76, 27, 0.45);
+  --jw-cream:        #f0ebe0;
+  --jw-muted:        #7a7060;
+  --jw-dark:         #0d0d0d;
+  --jw-card:         rgba(255, 255, 255, 0.025);
+
+  background-color: #0d0d0d;
+  color: #f0ebe0;
+
+  /* ════════════ Badge / label ════════════ */
+  .jw-badge {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--jw-olive);
+    animation: jw-fade-down 0.9s ease both;
+    margin: 0;
+  }
+
+  /* ════════════ Section ornament divider ════════════ */
+  .jw-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      max-width: 110px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--jw-olive), transparent);
+      opacity: 0.4;
+    }
+  }
+
+  /* ════════════ Green stat chip (hero) ════════════ */
+  .jw-chip {
+    background: var(--jw-olive-dim);
+    border: 1px solid var(--jw-olive-border);
+    border-radius: 14px;
+    padding: 12px 10px;
+    text-align: center;
+
+    .jw-chip-label {
+      font-family: 'Jost', sans-serif;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--jw-cream);
+      opacity: 0.85;
+      display: block;
+    }
+
+    .jw-chip-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--jw-cream);
+      margin-top: 3px;
+      display: block;
+      line-height: 1.2;
+    }
+  }
+
+  /* ════════════ Countdown time boxes ════════════ */
+  .jw-time-box {
+    background: var(--jw-olive-dim);
+    border: 1px solid var(--jw-olive-border);
+    border-radius: 16px;
+    padding: 20px 6px;
+    text-align: center;
+
+    .jw-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 7vw, 3.2rem);
+      font-weight: 300;
+      color: var(--jw-olive);
+      line-height: 1;
+      display: block;
+    }
+
+    .jw-lbl {
+      font-family: 'Jost', sans-serif;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--jw-muted);
+      margin-top: 8px;
+      display: block;
+    }
+  }
+
+  /* ════════════ Section card ════════════ */
+  .jw-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--jw-olive-border);
+    border-radius: 20px;
+    padding: 28px 24px;
+    backdrop-filter: blur(8px);
+
+    @media (min-width: 640px) {
+      padding: 36px 32px;
+    }
+  }
+
+  /* ════════════ Itinerary timeline ════════════ */
+  .jw-timeline {
+    position: relative;
+    padding-left: 36px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      bottom: 10px;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--jw-olive) 0%, transparent 100%);
+      opacity: 0.25;
+    }
+
+    .jw-timeline-item {
+      position: relative;
+      padding-bottom: 26px;
+
+      &:last-child {
+        padding-bottom: 0;
+      }
+
+      .jw-dot {
+        position: absolute;
+        left: -27px;
+        top: 5px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--jw-olive);
+        opacity: 0.65;
+      }
+
+      .jw-time {
+        font-family: 'Jost', sans-serif;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--jw-olive);
+        font-weight: 500;
+        margin-bottom: 3px;
+      }
+
+      .jw-event-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.15rem;
+        font-weight: 500;
+        color: var(--jw-cream);
+        line-height: 1.3;
+      }
+
+      .jw-event-desc {
+        font-family: 'Jost', sans-serif;
+        font-size: 0.85rem;
+        color: var(--jw-muted);
+        margin-top: 4px;
+        line-height: 1.6;
+      }
+    }
+  }
+
+  /* ════════════ FAQ accordion ════════════ */
+  .jw-faq-item {
+    border: 1px solid var(--jw-olive-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+      border-color: rgba(63, 76, 27, 0.60);
+    }
+
+    .jw-faq-trigger {
+      width: 100%;
+      text-align: left;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--jw-olive-dim);
+      cursor: pointer;
+      transition: background 0.2s ease;
+      border: none;
+      color: inherit;
+
+      &:hover {
+        background: rgba(63, 76, 27, 0.25);
+      }
+
+      .jw-faq-q {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: var(--jw-cream);
+        line-height: 1.3;
+        flex: 1;
+        padding-right: 12px;
+      }
+
+      .jw-faq-icon {
+        font-size: 1.3rem;
+        color: var(--jw-olive);
+        transition: transform 0.25s ease;
+        flex-shrink: 0;
+        line-height: 1;
+
+        &.open {
+          transform: rotate(45deg);
+        }
+      }
+    }
+
+    .jw-faq-answer {
+      padding: 16px 22px 20px;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.875rem;
+      line-height: 1.75;
+      color: var(--jw-muted);
+      border-top: 1px solid var(--jw-olive-border);
+      white-space: pre-line;
+    }
+  }
+
+  /* ════════════ Gallery ════════════ */
   .gallery-image {
     .img {
       border-radius: 8px;
@@ -7,4 +269,36 @@
       height: 100%;
     }
   }
+}
+
+/* ════════════ Legacy / external classes ════════════ */
+.myTest {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: rgb(122, 112, 96);
+  margin-bottom: 20px;
+  animation: jw-fade-down 0.8s ease both;
+}
+
+/* ════════════ Keyframes ════════════ */
+@keyframes jw-fade-down {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes jw-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes jw-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
