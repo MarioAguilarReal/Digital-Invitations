@@ -35,5 +35,16 @@ class TemplateSeeder extends Seeder
                 'is_active' => true
             ]
         );
+        Template::updateOrCreate(
+            [
+                'key' => 'jesus_wedding'
+            ],
+            [
+                'name' => 'Boda de Jesús',
+                'description' => 'Invitación elegante para la boda de Jesús.',
+                'preview_image_url' => '/images/templates/jesus_wedding.png',
+                'is_active' => true
+            ]
+        );
     }
 }
