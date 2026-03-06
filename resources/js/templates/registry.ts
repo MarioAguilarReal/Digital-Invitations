@@ -3,5 +3,6 @@ import JesusWedding from "./jesus_wedding/Invitation";
 
 export const templateRegistry: Record<string, React.ComponentType<any>> = {
   grad_modern_01: GradStory01,
-  grad_minimal_02: JesusWedding,
+  grad_minimal_02: GradStory01,
+  jesus_wedding: JesusWedding,
 };  
