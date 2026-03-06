@@ -26,3 +26,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+deploy_local.sh
+LightsailDefaultKey-us-west-2.pem
