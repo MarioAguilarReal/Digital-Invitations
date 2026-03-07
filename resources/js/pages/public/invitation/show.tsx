@@ -38,7 +38,8 @@ export default function PublicInvitationShow({ invitation, guest, rsvpUrl }: Pro
           <a
             href={rsvpUrl}
             style={{
-              background: "Black",
+              background: "rgba(63, 76, 27, 0.15)",
+              border: "5px solid rgba(63, 76, 27, 0.45)",
               borderRadius: "999px",
               boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
               color: "White",
