@@ -18,6 +18,7 @@ class Guest extends Model
         'seats_reserved',
         'seats_confirmed',
         'status',
+        'viewed',
         'member_names',
         'note',
         'public_token',
@@ -25,6 +26,7 @@ class Guest extends Model
 
     protected $casts = [
         'member_names' => 'array',
+        'viewed' => 'boolean',
     ];
 
     public function invitation()

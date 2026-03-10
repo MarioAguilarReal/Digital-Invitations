@@ -247,6 +247,7 @@ class InvitationController extends Controller
                 'seats_reserved' => $g->seats_reserved,
                 'seats_confirmed' => $g->seats_confirmed,
                 'status' => $g->status,
+                'viewed' => $g->viewed,
                 'member_names' => $g->member_names,
                 'public_token' => $g->public_token,
                 'rsvp_url' => URL::temporarySignedRoute(

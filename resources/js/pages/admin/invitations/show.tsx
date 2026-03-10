@@ -11,36 +11,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Head, router, usePage } from '@inertiajs/react';
-import { toWhatsAppUrl } from '@/lib/whatsapp';
 import { InputMask as MaskedInput } from '@react-input/mask';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
-
-type Invitation = {
-  id: number;
-  slug: string;
-  event_name: string;
-  host_name: string;
-  venue_name: string;
-  event_date: string;
-  event_time: any;
-  capacity: number;
-  rsvp_deadline_at?: string | null;
-};
-
-type Guest = {
-  id: number;
-  type: "individual" | "group";
-  display_name: string;
-  contact_phone: string | null;
-  contact_email: string | null;
-  seats_reserved: number;
-  seats_confirmed: number;
-  status: "pending" | "confirmed" | "declined";
-  rsvp_url: string;
-  public_token: string;
-  allow_plus_one?: boolean;
-  member_names?: string[] | null;
-};
+import { type Invitation } from './Models/Invitation.type';
+import { Guest } from './Models/Guest.type';
+import { copy, formatDateEsMX } from './helpers';
+import { StatCard } from './Components/StatCard';
+import { GuestTable } from './Components/GuestTable';
+import { CreateGuest } from './Components/CreateGuest';
 
 type Props = {
   invitation: Invitation
@@ -56,16 +34,7 @@ type Props = {
   };
 };
 
-type GuestCreateValues = {
-  type: "individual" | "group";
-  display_name: string;
-  contact_phone?: string | null;
-  contact_email?: string | null;
-  seats_reserved?: number;
-  allow_plus_one?: boolean;
-  member_names: { name: string }[];
-  note?: string | null;
-};
+
 
 type GuestEditValues = {
   display_name: string;
@@ -78,30 +47,9 @@ type GuestEditValues = {
 
 
 export default function AdminInvitationShow({ invitation, guests, stats }: Props) {
-  const { errors } = usePage().props as { errors?: Record<string, string> };
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [deleteGuest, setDeleteGuest] = useState<Guest | null>(null);
   const [deleteInvitation, setDeleteInvitation] = useState(false);
-
-  const {
-    register,
-    control,
-    handleSubmit,
-    watch,
-    setValue,
-    reset,
-  } = useForm<GuestCreateValues>({
-    defaultValues: {
-      type: "individual",
-      display_name: "",
-      contact_phone: "",
-      contact_email: "",
-      seats_reserved: 1,
-      allow_plus_one: false,
-      member_names: [],
-      note: "",
-    },
-  });
 
   const {
     control: editControl,
@@ -119,7 +67,6 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
     },
   });
 
-  const createFields = useFieldArray({ control, name: "member_names" });
   const editFields = useFieldArray({ control: editControl, name: "member_names" });
 
   useEffect(() => {
@@ -138,122 +85,7 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
 
   const publicUrl = useMemo(() => `/i/${invitation.slug}`, [invitation.slug]);
 
-  async function copy(text: string) {
-    await navigator.clipboard.writeText(text);
-    alert('Copiado al portapapeles');
-  }
-
-  function formatDateEsMX(dateStr?: string | null) {
-    if (!dateStr) return null;
-    const [y, m, d] = dateStr.split('-').map(Number);
-    if (!y || !m || !d) return dateStr;
-
-    const dt = new Date(y, m-1, d);
-    return new Intl.DateTimeFormat('es-MX', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    }).format(dt);
-  }
-
-  function formatTimeEsMX(timeStr?: string | null) {
-    if (!timeStr) return null;
-    const [h, m] = timeStr.split(':').map(Number);
-    if (h == null || m == null) return timeStr;
-
-    const dt = new Date();
-    dt.setHours(h, m, 0, 0);
-    return new Intl.DateTimeFormat('es-MX', {
-        hour: 'numeric',
-        minute: 'numeric',
-    }).format(dt);
-  }
-
-  function buildWhatsAppMessage(guest: Guest) {
-    const date = formatDateEsMX(invitation.event_date) || '';
-    const time = invitation.event_time ? `a las ${formatTimeEsMX(invitation.event_time.slice(-16))}` : '';
-    const venue = invitation.venue_name ? ` en ${invitation.venue_name}` : '';
-
-    const invitationUrl = `${location.origin}/i/${invitation.slug}?g=${guest.id}&s=${guest.public_token}`;
-
-    if (guest.type == "group") {
-      return `Hola ${guest.display_name}, están invitad@s a *${invitation.event_name}* 🎉\n` +
-        `Tienen ${guest.seats_reserved} lugares reservados.\n` +
-        `📍 ${venue}\n` +
-        `🗓️ ${date} ⏰ ${time}\n\n` +
-        `Confirmen aquí: ${invitationUrl}`;
-    }
-
-    return `Hola ${guest.display_name}, estás invitad@ a *${invitation.event_name}* 🎉\n` +
-    `📍 ${venue}\n` +
-    `🗓️ ${date} ⏰ ${time}\n\n` +
-    `Confirma aquí: ${invitationUrl}`;
-  }
-
-  const sendMessage = (guest: Guest) => {
-    const message = buildWhatsAppMessage(guest);
-    const whatsURL = toWhatsAppUrl(message, guest.contact_phone);
-    window.open(whatsURL, '_blank');
-  }
-
-  const type = watch("type");
-  const allowPlusOne = watch("allow_plus_one");
-  const seatsReserved = watch("seats_reserved");
-  const typeField = register("type");
-
-  const { replace: replaceCreateMembers } = createFields;
-
-  useEffect(() => {
-    if (type !== "group") {
-      replaceCreateMembers([]);
-    }
-  }, [type, replaceCreateMembers]);
-
-
-  const onCreateGuest = handleSubmit((values) => {
-    const payload: Record<string, any> = {
-      type: values.type,
-      display_name: values.display_name,
-      contact_phone: values.contact_phone,
-      contact_email: values.contact_email,
-      note: values.note,
-    };
-
-    if (values.type === "group") {
-      payload.seats_reserved = values.seats_reserved ?? 1;
-      payload.member_names = (values.member_names ?? [])
-        .map((entry) => entry.name)
-        .filter(Boolean);
-    } else {
-      payload.allow_plus_one = !!values.allow_plus_one;
-    }
-
-    router.post(`/admin/invitations/${invitation.id}/guests`, payload, {
-      onSuccess: () => {
-        reset({
-          type: "individual",
-          display_name: "",
-          contact_phone: "",
-          contact_email: "",
-          seats_reserved: 1,
-          allow_plus_one: false,
-          member_names: [],
-          note: "",
-        });
-        createFields.replace([]);
-      },
-    });
-  });
-
-  const remainingSeats = stats.remainingSeats ?? 0;
-  const requestedSeats = type === 'group'
-    ? Math.max(1, Number(seatsReserved) || 1)
-    : (allowPlusOne ? 2 : 1);
-  const canCreateGuest = remainingSeats >= requestedSeats;
-
-  const inputBaseClass =
-    "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive";
+  const inputBaseClass = "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive";
 
   return (
       <AppLayout
@@ -321,274 +153,8 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
               </div>
 
               <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-                  <form
-                      onSubmit={onCreateGuest}
-                      className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm"
-                  >
-                      <h2 className="text-sm font-semibold">Add guest</h2>
-
-                      <div className="mt-3 grid gap-3">
-                          <select
-                              {...typeField}
-                              value={type}
-                              onChange={(e) => {
-                                  typeField.onChange(e);
-                                  const nextType = e.target.value as
-                                      | 'individual'
-                                      | 'group';
-                                  setValue('type', nextType, {
-                                      shouldValidate: true,
-                                  });
-                                  if (nextType === 'group') {
-                                      setValue(
-                                          'seats_reserved',
-                                          Math.max(
-                                              1,
-                                              Number(seatsReserved) || 1,
-                                          ),
-                                      );
-                                      setValue('allow_plus_one', false);
-                                  } else {
-                                      setValue('seats_reserved', 1);
-                                  }
-                              }}
-                              className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                          >
-                              <option value="individual">Individual</option>
-                              <option value="group">Group</option>
-                          </select>
-
-                          <Input
-                              placeholder={
-                                  type === 'group'
-                                      ? 'Family name (e.g., Familia Perez Juarez)'
-                                      : 'Guest name'
-                              }
-                              {...register('display_name')}
-                          />
-
-                          <Controller
-                              control={control}
-                              name="contact_phone"
-                              render={({ field }) => (
-                                  <MaskedInput
-                                      mask="(___) ___-____"
-                                      replacement={{ _: /\d/ }}
-                                      value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      className={inputBaseClass}
-                                      placeholder="Contact phone (optional)"
-                                  />
-                              )}
-                          />
-
-                          <Input
-                              placeholder="Contact email (optional)"
-                              type="email"
-                              {...register('contact_email')}
-                          />
-
-                          {type === 'group' ? (
-                              <Input
-                                  type="number"
-                                  min={1}
-                                  placeholder="Seats reserved"
-                                  {...register('seats_reserved', {
-                                      valueAsNumber: true,
-                                  })}
-                              />
-                          ) : (
-                              <div className="grid gap-2">
-                                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                                      <input
-                                          type="checkbox"
-                                          checked={!!allowPlusOne}
-                                          onChange={(e) =>
-                                              setValue(
-                                                  'allow_plus_one',
-                                                  e.target.checked,
-                                              )
-                                          }
-                                      />
-                                      Permitir acompañante (+1)
-                                  </label>
-                                  <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-                                      Reservados: {allowPlusOne ? 2 : 1}{' '}
-                                      lugares.
-                                  </div>
-                              </div>
-                          )}
-
-                          {type === 'group' ? (
-                              <div className="grid gap-2">
-                                  <div className="text-xs font-medium text-muted-foreground">
-                                      Nombres de asistentes (opcional)
-                                  </div>
-                                  <div className="grid gap-2">
-                                      {createFields.fields.map((field, idx) => (
-                                          <div
-                                              key={field.id}
-                                              className="grid grid-cols-[1fr_36px] gap-2"
-                                          >
-                                              <Input
-                                                  placeholder={`Nombre #${idx + 1}`}
-                                                  {...register(
-                                                      `member_names.${idx}.name` as const,
-                                                  )}
-                                              />
-                                              <Button
-                                                  type="button"
-                                                  variant="outline"
-                                                  size="icon"
-                                                  onClick={() =>
-                                                      createFields.remove(idx)
-                                                  }
-                                              >
-                                                  ×
-                                              </Button>
-                                          </div>
-                                      ))}
-                                      <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                              createFields.append({ name: '' })
-                                          }
-                                      >
-                                          + Agregar nombre
-                                      </Button>
-                                  </div>
-                              </div>
-                          ) : null}
-
-                          <textarea
-                              placeholder="Note (optional)"
-                              rows={3}
-                              className="min-h-[90px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                              {...register('note')}
-                          />
-
-                          {errors?.seats_reserved && (
-                              <div className="text-xs text-destructive">
-                                  {errors.seats_reserved}
-                              </div>
-                          )}
-
-                          {!canCreateGuest ? (
-                              <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
-                                  Capacidad alcanzada. No hay lugares
-                                  suficientes para esta invitación.
-                              </div>
-                          ) : null}
-
-                          <Button type="submit" disabled={!canCreateGuest}>
-                              Create guest
-                          </Button>
-                      </div>
-                  </form>
-
-                  <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-                      <h2 className="text-sm font-semibold">Guests</h2>
-                      <div className="mt-3 border-t border-border" />
-
-                      <div className="mt-3 grid gap-3">
-                          {guests.length === 0 ? (
-                              <div className="text-sm text-muted-foreground">
-                                  No guests yet.
-                              </div>
-                          ) : (
-                              guests.map((g) => (
-                                  <div
-                                      key={g.id}
-                                      className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 text-card-foreground sm:flex-row sm:items-center sm:justify-between"
-                                  >
-                                      <div className="flex-3">
-                                          <div className="font-semibold">
-                                              {g.display_name}{' '}
-                                              <span className="text-xs font-medium text-muted-foreground">
-                                                  ({g.type}
-                                                  {g.type === 'individual' ? (
-                                                      <span className="ml-1 text-xs text-muted-foreground">
-                                                          {g.allow_plus_one
-                                                              ? 'con +1'
-                                                              : 'sin +1'}
-                                                      </span>
-                                                  ) : null}
-                                                  )
-                                              </span>
-                                          </div>
-                                          <div
-                                              className="text-xs text-muted-foreground"
-                                              style={{
-                                                  color: `${g.seats_reserved == g.seats_confirmed ? 'green' : g.status === 'declined' ? 'red' : g.seats_reserved > g.seats_confirmed ? 'orange' : 'inherit'}`,
-                                              }}
-                                          >
-                                              Reserved: {g.seats_reserved}
-                                              <br />
-                                              Confirmed: {g.seats_confirmed}
-                                              <br />
-                                              Status: {g.status}
-                                              <br />
-                                          </div>
-                                          {Array.isArray(g.member_names) &&
-                                          g.member_names.length ? (
-                                              <div className="mt-1 text-xs text-muted-foreground">
-                                                  Nombres:{' '}
-                                                  {g.member_names
-                                                      .filter(Boolean)
-                                                      .join(', ')}
-                                              </div>
-                                          ) : null}
-                                      </div>
-                                      <div className="flex w-full flex-1 flex-wrap gap-2 sm:w-auto sm:justify-end">
-                                          <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => copy(g.rsvp_url)}
-                                              className="w-full sm:w-auto"
-                                          >
-                                              Copy RSVP (next step)
-                                          </Button>
-                                          <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => sendMessage(g)}
-                                              className="w-full sm:w-auto"
-                                          >
-                                              Send WhatsApp
-                                          </Button>
-                                          <Button
-                                              variant="outline"
-                                              onClick={() =>
-                                                  copy(buildWhatsAppMessage(g))
-                                              }
-                                              className="w-full sm:w-auto"
-                                          >
-                                              Copy Message
-                                          </Button>
-                                          <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => setEditingGuest(g)}
-                                              className="w-full sm:w-auto"
-                                          >
-                                              Edit
-                                          </Button>
-                                          <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => setDeleteGuest(g)}
-                                              className="w-full sm:w-auto"
-                                          >
-                                              Delete
-                                          </Button>
-                                      </div>
-                                  </div>
-                              ))
-                          )}
-                      </div>
-                  </div>
+                  <CreateGuest invitation={invitation} stats={stats} />
+                  <GuestTable guests={guests} invitation={invitation} setEditingGuest={setEditingGuest} setDeletingGuest={setDeleteGuest} />
               </div>
           </div>
 
@@ -794,14 +360,5 @@ export default function AdminInvitationShow({ invitation, guests, stats }: Props
               </DialogContent>
           </Dialog>
       </AppLayout>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: any }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 text-2xl font-semibold">{value}</div>
-    </div>
   );
 }

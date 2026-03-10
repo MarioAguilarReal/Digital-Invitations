@@ -18,7 +18,7 @@ class PublicInvitationController extends Controller
             abort(404);
         }
 
-        $guestId = request()->query('g');
+        $guestId = request()->query('g', request()->query('guest'));
         $secret = request()->query('s');
 
         $guest = null;
@@ -32,6 +32,10 @@ class PublicInvitationController extends Controller
                 ->first();
 
             if ($guest) {
+                if (!$guest->viewed) {
+                    $guest->forceFill(['viewed' => true])->save();
+                }
+
                 $rsvpUrl = \URL::temporarySignedRoute(
                     'public.rsvp.show',
                     $invitation->rsvp_deadline_at ?? now()->addDays(30),

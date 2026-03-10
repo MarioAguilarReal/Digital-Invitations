@@ -32,7 +32,7 @@ export default function PublicInvitationShow({ invitation, guest, rsvpUrl }: Pro
 
   return (
     <>
-      <Template invitation={invitation} />;
+      <Template invitation={invitation} />
       {rsvpUrl ? (
         <div className="fixed bottom-5 left-0 right-0 z-50 flex justify-center px-4 sm:bottom-6">
           <a

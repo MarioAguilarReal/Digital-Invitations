@@ -56,9 +56,9 @@ export default function InvitationsIndex({ invitations }: { invitations: Invitat
             <thead className="bg-muted/40">
               <tr className="text-left">
                 <th className="px-4 py-3">Event</th>
-                <th className="px-4 py-3">Template</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-muted-foreground hidden sm:table-cell">Template</th>
+                <th className="px-4 py-3 text-muted-foreground hidden sm:table-cell">Date</th>
+                <th className="px-4 py-3 text-muted-foreground hidden sm:table-cell">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -66,9 +66,9 @@ export default function InvitationsIndex({ invitations }: { invitations: Invitat
               {invitations.map((inv) => (
                 <tr key={inv.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{inv.event_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{inv.template_name}</td>
-                  <td className="px-4 py-3">{inv.event_date ?? '—'}</td>
-                  <td className="px-4 py-3">{inv.status}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{inv.template_name}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{inv.event_date ?? '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{inv.status}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex flex-wrap justify-end gap-2">
                       <Link
