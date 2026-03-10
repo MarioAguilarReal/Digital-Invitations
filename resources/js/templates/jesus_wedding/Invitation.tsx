@@ -54,18 +54,18 @@ function themeVars(theme: any, hostColor?: string | null): React.CSSProperties {
 
 /* ── Default content ── */
 const DEFAULT_SCHEDULE = [
-    { time: '4:00 PM', title: 'Ceremonia religiosa ⛪️', desc: 'Nos encantaría que nos puedas acompañar en este hermoso momento en la casa de nuestro señor Jesucristo.' },
-    { time: '6:30 PM', title: 'Recepción 🥂🍾', desc: 'Brindis y aperitivos de bienvenida.' },
+    { time: '4:00 PM', title: 'Ceremonia religiosa', desc: 'Te invitamos a celebrar nuestra unión católica en la iglesia, Santa María Estrella de Mar. Te agradecemos llegar 10 min. antes.' },
+    { time: '6:30 PM', title: 'Recepción', desc: 'Brindis y aperitivos de bienvenida.' },
     { time: '6:45 PM', title: 'Ceremonia Civil', desc: 'Nos encantaría que nos pudieran acompañar y poder compartir este hermoso momento.' },
-    { time: '8:00 PM', title: 'Cena 🍽️', desc: 'Banquete de celebración.' },
-    { time: '9:00 PM', title: 'Primer baile de los novios 👰🏽🤵🏽', desc: '' },
-    { time: '9:30 PM', title: 'Baile!!! 💃🏽🕺🏽', desc: '' },
-    { time: '11:00 PM', title: 'Trasnochador 🌽', desc: '' },
+    { time: '8:00 PM', title: 'Cena', desc: 'Banquete de celebración.' },
+    { time: '9:00 PM', title: 'Primer baile de los novios', desc: '' },
+    { time: '9:30 PM', title: 'Baile', desc: '' },
+    { time: '11:00 PM', title: 'Trasnochador', desc: '' },
 ];
 
 const DEFAULT_FAQ = [
     {
-        question: 'Código de vestimenta 👗👔',
+        question: 'Código de vestimenta',
         answer: 'Será una ceremonia de vestimenta formal. Colores NO permitidos:\n- Blanco o similares\n- Rojo\n- Ivory.',
     },
     {
@@ -73,15 +73,15 @@ const DEFAULT_FAQ = [
         answer: 'Por tratarse de una celebración íntima y de cupo limitado, hemos tomado la decisión de solo invitar a las personas más cercanas. Tu eres una de ellas. La invitación es únicamente por la cantidad mencionada. ¡Esperamos de todo corazón que nos puedas acompañar!',
     },
     {
-        question: '¿Puedo llevar niños? 🚫 👶',
+        question: '¿Puedo llevar niños?',
         answer: 'Adoramos a tus pequeños, sin embargo este evento está destinado únicamente para adultos. ¡Esperamos tu comprensión!',
     },
     {
-        question: 'Regalos 🎁',
-        answer: 'Tu compañía es lo más importante, pero si gustas apoyarnos en nuestro nuevo comienzo, aquí están nuestros datos:\n- Banco: Banorte\n- Nombre: Denisse De Jesus Virgen\n- CLABE: 072028013491531651',
+        question: 'Regalos',
+        answer: 'Tu compañía es lo más importante, sin embargo dejaremos una cajita para regalos en efectivo.',
     },
     {
-        question: 'Estacionamiento 🅿️',
+        question: 'Estacionamiento',
         answer: 'No te preocupes por dónde dejar tu carro, el salón cuenta con valet parking. Si planeas tomar, te recomendamos usar Uber o Didi para que disfrutes tranquilo y evites cualquier inconveniente.',
     },
     {
